@@ -1,4 +1,4 @@
-import type { WatchedWindow, TaskCard, TaskStatus, DetectionRule } from '../shared/types'
+import type { WatchedWindow, TaskCard, TaskStatus, DetectionRule, UserSettings } from '../shared/types'
 
 declare global {
   interface Window {
@@ -22,6 +22,12 @@ declare global {
       startPolling: () => Promise<void>
       stopPolling: () => Promise<void>
       getPollingStatus: () => Promise<{ running: boolean }>
+
+      getSettings: () => Promise<UserSettings>
+      saveSettings: (partial: Partial<UserSettings>) => Promise<void>
+
+      clearAllData: () => Promise<void>
+      loadDemoFixtures: () => Promise<void>
     }
   }
 }

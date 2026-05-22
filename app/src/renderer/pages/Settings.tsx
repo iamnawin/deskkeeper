@@ -1,6 +1,5 @@
-import { useState } from 'react'
-import { mockSettings } from '../lib/mock-data'
-import { UserSettings } from '../../shared/types'
+import { useState, useEffect, useCallback } from 'react'
+import type { UserSettings } from '../../shared/types'
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -86,14 +85,71 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export default function Settings() {
-  const [settings, setSettings] = useState<UserSettings>(mockSettings)
+  const [settings, setSettings] = useState<UserSettings | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    window.deskkeeper.getSettings().then(s => setSettings(s))
+  }, [])
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2000)
+  }, [])
 
   function set<K extends keyof UserSettings>(key: K, value: UserSettings[K]) {
-    setSettings(s => ({ ...s, [key]: value }))
+    if (!settings) return
+    const updated = { ...settings, [key]: value }
+    setSettings(updated)
+    window.deskkeeper.saveSettings({ [key]: value })
+  }
+
+  function handleNumberBlur<K extends keyof UserSettings>(key: K, value: number) {
+    if (!settings) return
+    set(key, value as UserSettings[K])
+  }
+
+  async function handleClearData() {
+    if (!window.confirm('This will remove all watched windows and task cards. Continue?')) return
+    await window.deskkeeper.clearAllData()
+    showToast('Data cleared')
+    setTimeout(() => window.location.reload(), 800)
+  }
+
+  async function handleLoadDemo() {
+    await window.deskkeeper.loadDemoFixtures()
+    showToast('Demo data loaded — go to Dashboard')
+  }
+
+  if (!settings) {
+    return (
+      <div style={{ color: '#5a5d70', fontSize: '13px', padding: '24px 0' }}>
+        Loading settings...
+      </div>
+    )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '520px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '520px', position: 'relative' }}>
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            backgroundColor: '#1a1d27',
+            border: '1px solid #2a2d3a',
+            borderRadius: '6px',
+            padding: '10px 16px',
+            color: '#22c55e',
+            fontSize: '13px',
+            zIndex: 100,
+          }}
+        >
+          {toast}
+        </div>
+      )}
+
       <h1 style={{ color: '#e8eaf0', fontWeight: 600, fontSize: '18px' }}>Settings</h1>
 
       <section>
@@ -111,7 +167,8 @@ export default function Settings() {
                 min={1}
                 max={60}
                 value={settings.notificationCooldownMinutes}
-                onChange={e => set('notificationCooldownMinutes', parseInt(e.target.value) || 5)}
+                onChange={e => setSettings(s => s ? { ...s, notificationCooldownMinutes: parseInt(e.target.value) || 5 } : s)}
+                onBlur={e => handleNumberBlur('notificationCooldownMinutes', parseInt(e.target.value) || 5)}
                 style={{
                   width: '52px',
                   padding: '4px 8px',
@@ -142,7 +199,8 @@ export default function Settings() {
                 min={5}
                 max={60}
                 value={settings.captureIntervalSeconds}
-                onChange={e => set('captureIntervalSeconds', parseInt(e.target.value) || 10)}
+                onChange={e => setSettings(s => s ? { ...s, captureIntervalSeconds: parseInt(e.target.value) || 10 } : s)}
+                onBlur={e => handleNumberBlur('captureIntervalSeconds', parseInt(e.target.value) || 10)}
                 style={{
                   width: '52px',
                   padding: '4px 8px',
@@ -165,8 +223,34 @@ export default function Settings() {
         <SectionCard>
           <SettingRow label="Use AI for ambiguous detection" value={settings.useAiClassifier} onChange={v => set('useAiClassifier', v)} />
           <p style={{ color: '#5a5d70', fontSize: '11px', paddingBottom: '10px' }}>
-            When enabled, window title snippets may be processed by an AI model.
+            When enabled, window title snippets may be processed by an AI model. Requires ANTHROPIC_API_KEY.
           </p>
+        </SectionCard>
+      </section>
+
+      <section>
+        <SectionHeader title="Demo" />
+        <SectionCard>
+          <div style={{ padding: '14px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              onClick={handleLoadDemo}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '4px',
+                backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                border: '1px solid rgba(99, 102, 241, 0.35)',
+                color: '#6366f1',
+                fontSize: '13px',
+                cursor: 'pointer',
+                alignSelf: 'flex-start',
+              }}
+            >
+              Load demo data
+            </button>
+            <p style={{ color: '#5a5d70', fontSize: '11px' }}>
+              Seeds representative task cards for demo or testing. Safe to run multiple times.
+            </p>
+          </div>
         </SectionCard>
       </section>
 
@@ -175,6 +259,7 @@ export default function Settings() {
         <SectionCard>
           <div style={{ padding: '14px 0' }}>
             <button
+              onClick={handleClearData}
               style={{
                 padding: '6px 14px',
                 borderRadius: '4px',
@@ -188,7 +273,7 @@ export default function Settings() {
               Clear all local data
             </button>
             <p style={{ color: '#5a5d70', fontSize: '11px', marginTop: '8px' }}>
-              This will remove all watched windows, task cards, and notification history.
+              Removes all watched windows, task cards, and notification history. Settings and rules are preserved.
             </p>
           </div>
         </SectionCard>

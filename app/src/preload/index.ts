@@ -28,4 +28,12 @@ contextBridge.exposeInMainWorld('deskkeeper', {
   startPolling: () => ipcRenderer.invoke('polling:start'),
   stopPolling: () => ipcRenderer.invoke('polling:stop'),
   getPollingStatus: () => ipcRenderer.invoke('polling:status'),
+
+  // Settings
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  saveSettings: (partial: object) => ipcRenderer.invoke('settings:save', partial),
+
+  // Data management
+  clearAllData: () => ipcRenderer.invoke('data:clear-all'),
+  loadDemoFixtures: () => ipcRenderer.invoke('demo:load-fixtures'),
 })

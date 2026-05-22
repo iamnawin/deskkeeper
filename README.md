@@ -20,27 +20,83 @@ DeskKeeper watches your open work and tells you what needs attention before it g
 
 ---
 
-## Who Is It For?
+## Current Status
 
-- Developers running terminals, agents, builds, and deployments
-- AI creators managing renders, exports, and uploads
-- Founders and operators handling proposals, emails, and CRM
-- Business users juggling forms, drafts, and meeting follow-ups
-- Students with assignments, notes, and submissions open
-- Anyone working across 2+ screens and windows
+**v0.1.0** — All 9 build phases complete. MVP ready for local demo.
 
 ---
 
-## MVP Features (v0.1 — DeskKeeper Lite)
+## Running the Desktop App (Dev Mode)
+
+```bash
+cd app
+npm install
+npm run dev
+```
+
+The Electron app opens in dev mode with hot-reload. No extra setup required.
+
+---
+
+## Building the Desktop App (Production)
+
+```bash
+cd app
+npm install
+npm run build        # compile only (fast check)
+npm run package      # compile + create installer in app/dist/
+```
+
+The installer is built to:
+- **Windows**: `app/dist/DeskKeeper-0.1.0-win-x64.exe`
+- **Mac**: `app/dist/DeskKeeper-0.1.0-mac-x64.dmg` / `-arm64.dmg`
+- **Linux**: `app/dist/DeskKeeper-0.1.0-linux-x64.AppImage`
+
+---
+
+## Building the Chrome Extension
+
+```bash
+cd extension
+npm install
+npm run build        # compiles to extension/dist/
+```
+
+### Loading the Extension in Chrome
+
+1. Open Chrome and go to `chrome://extensions`
+2. Enable **Developer mode** (toggle, top right)
+3. Click **Load unpacked**
+4. Select the folder: `extension/dist/`
+5. The DeskKeeper extension icon appears in the Chrome toolbar
+
+The extension connects to the desktop app on `localhost:7420`. The popup shows green when the desktop app is running.
+
+---
+
+## Demo Mode
+
+If you don't have real windows to monitor, load demo data:
+
+1. Launch the desktop app (`npm run dev` inside `app/`)
+2. Navigate to **Settings → Demo → Load demo data**
+3. Click **Load demo data**
+4. Go to **Dashboard** — 4 representative task cards appear
+
+---
+
+## MVP Features (v0.1.0)
 
 - View currently open windows
 - Select windows to watch
 - Watched windows become task cards
-- Automatic state detection: `WAITING_FOR_USER`, `RUNNING`, `FAILED`, `COMPLETED`, `IDLE`, `UNKNOWN`
+- Automatic state detection: `WAITING_FOR_USER`, `RUNNING`, `FAILED`, `COMPLETED`, `IDLE`
 - Desktop notifications when attention is needed
-- Snooze, mark done, or ignore tasks
-- Local storage — no cloud required
-- Privacy controls: private mode, pause monitoring, blocklist
+- Detection rules engine (keyword-based, configurable)
+- Settings persistence (local JSON, no cloud)
+- Privacy controls: private mode, pause monitoring
+- Chrome extension companion with popup status indicator
+- Demo mode (Settings → Load demo data)
 
 ---
 
@@ -50,47 +106,51 @@ DeskKeeper watches your open work and tells you what needs attention before it g
 |---|---|
 | Desktop runtime | Electron |
 | UI framework | React + TypeScript |
-| Build tool | Vite |
+| Build tool | electron-vite |
 | Styling | Tailwind CSS |
-| Storage | electron-store (MVP) |
-| Detection | Rule-based engine (AI optional later) |
+| Storage | Local JSON (app data directory) |
+| Detection | Rule-based engine (AI optional) |
+| Extension | MV3, Vite, TypeScript |
 
 ---
 
-## How To Run (once app is built)
+## Project Structure
 
-```bash
-cd app
-npm install
-npm run dev
 ```
-
----
-
-## Current Status
-
-**Phase 0 — Documentation complete.**  
-Next: Build Electron mock UI shell.
+DeskKeeper AI/
+├── app/                    Electron desktop app
+│   ├── src/main/           Main process (IPC, services)
+│   ├── src/renderer/       React UI
+│   ├── src/preload/        Electron preload bridge
+│   └── src/shared/         Shared TypeScript types
+├── extension/              Chrome extension companion
+│   ├── src/                Extension source
+│   └── dist/               Built extension (load this in Chrome)
+└── *.md                    Product documentation
+```
 
 ---
 
 ## Roadmap
 
-| Phase | Goal |
-|---|---|
-| 0 | Documentation |
-| 1 | Electron mock UI with dark dashboard |
-| 2 | Window monitor + watched windows |
-| 3 | Rule-based detection engine |
-| 4 | Desktop notifications |
-| 5 | Local storage persistence |
-| 6 | OCR abstraction (placeholder) |
-| 7 | Chrome extension companion |
-| 8 | Optional AI classifier |
-| 9 | Packaging + distribution |
+| Phase | Goal | Status |
+|---|---|---|
+| 0 | Documentation | ✓ |
+| 1 | Electron mock UI | ✓ |
+| 2 | Window monitor + watched windows | ✓ |
+| 3 | Rule-based detection engine | ✓ |
+| 4 | Desktop notifications | ✓ |
+| 5 | Local storage persistence | ✓ |
+| 6 | OCR abstraction (placeholder) | ✓ |
+| 7 | Chrome extension companion | ✓ |
+| 8 | Optional AI classifier | ✓ |
+| 9 | Packaging + distribution | ✓ |
+| 10 | MVP hardening + demo readiness | ✓ |
 
 ---
 
 ## Documentation
 
 All product decisions are captured in markdown files at the root of this repo. Start with `PROJECT_CONTEXT.md` for the full picture.
+
+See `TROUBLESHOOTING.md` for common issues. See `RELEASE_NOTES.md` for v0.1.0 changes.

@@ -152,6 +152,14 @@ export function saveNotificationEvent(event: NotificationEvent): void {
   write(data)
 }
 
+export function clearUserData(): void {
+  const data = read()
+  data.watchedWindows = []
+  data.taskCards = []
+  data.notificationHistory = []
+  write(data)
+}
+
 export function seedDefaultRules(): void {
   const data = read()
   if (data.detectionRules.length === 0) {
