@@ -3,6 +3,7 @@ import { listOpenWindows } from './window-monitor-service'
 import { getTaskCards, saveTaskCard, getSettings, getDetectionRules } from './storage-service'
 import { runDetection } from './detection-engine'
 import { maybeNotify } from './notification-service'
+import { captureWindow } from './capture-service'
 import type { TaskStatus } from '../../shared/types'
 
 const SKIP_STATUSES: TaskStatus[] = ['DONE', 'IGNORED']
@@ -37,8 +38,9 @@ async function tick(): Promise<void> {
     if (!openWin) {
       newStatus = 'IDLE'
     } else {
+      const { visibleText } = await captureWindow(card.windowId)
       const result = runDetection(
-        { windowId: card.windowId, windowTitle: openWin.title, appName: card.appName, now },
+        { windowId: card.windowId, windowTitle: openWin.title, appName: card.appName, visibleText, now },
         rules,
       )
       newStatus = result.status
