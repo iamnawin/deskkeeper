@@ -1,0 +1,30 @@
+# Dependencies
+app/node_modules/
+node_modules/
+
+# Build output
+app/out/
+app/dist/
+
+# Electron build artifacts
+app/release/
+
+# Local data files
+ruvector.db
+*.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+
+# Claude session artifacts
+.claude/
