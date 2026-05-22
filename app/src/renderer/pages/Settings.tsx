@@ -1,0 +1,198 @@
+import { useState } from 'react'
+import { mockSettings } from '../lib/mock-data'
+import { UserSettings } from '../../shared/types'
+
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!value)}
+      style={{
+        width: '36px',
+        height: '20px',
+        borderRadius: '10px',
+        backgroundColor: value ? '#6366f1' : '#2a2d3a',
+        border: 'none',
+        cursor: 'pointer',
+        position: 'relative',
+        flexShrink: 0,
+        transition: 'background-color 0.15s',
+      }}
+      aria-checked={value}
+      role="switch"
+    >
+      <span
+        style={{
+          position: 'absolute',
+          top: '2px',
+          left: value ? '18px' : '2px',
+          width: '16px',
+          height: '16px',
+          borderRadius: '50%',
+          backgroundColor: '#fff',
+          transition: 'left 0.15s',
+        }}
+      />
+    </button>
+  )
+}
+
+function SettingRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 0',
+        borderBottom: '1px solid #2a2d3a',
+      }}
+    >
+      <span style={{ color: '#e8eaf0', fontSize: '13px' }}>{label}</span>
+      <Toggle value={value} onChange={onChange} />
+    </div>
+  )
+}
+
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        backgroundColor: '#1a1d27',
+        border: '1px solid #2a2d3a',
+        borderRadius: '6px',
+        padding: '0 16px',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <h2
+      style={{
+        color: '#8b8fa8',
+        fontSize: '11px',
+        fontWeight: 500,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        marginBottom: '8px',
+      }}
+    >
+      {title}
+    </h2>
+  )
+}
+
+export default function Settings() {
+  const [settings, setSettings] = useState<UserSettings>(mockSettings)
+
+  function set<K extends keyof UserSettings>(key: K, value: UserSettings[K]) {
+    setSettings(s => ({ ...s, [key]: value }))
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '520px' }}>
+      <h1 style={{ color: '#e8eaf0', fontWeight: 600, fontSize: '18px' }}>Settings</h1>
+
+      <section>
+        <SectionHeader title="Notifications" />
+        <SectionCard>
+          <SettingRow label="Enable notifications" value={settings.notificationsEnabled} onChange={v => set('notificationsEnabled', v)} />
+          <SettingRow label="Notify when waiting for input" value={settings.notifyOnWaiting} onChange={v => set('notifyOnWaiting', v)} />
+          <SettingRow label="Notify when task fails" value={settings.notifyOnFailed} onChange={v => set('notifyOnFailed', v)} />
+          <SettingRow label="Notify when task completes" value={settings.notifyOnCompleted} onChange={v => set('notifyOnCompleted', v)} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0' }}>
+            <span style={{ color: '#e8eaf0', fontSize: '13px' }}>Notification cooldown</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={settings.notificationCooldownMinutes}
+                onChange={e => set('notificationCooldownMinutes', parseInt(e.target.value) || 5)}
+                style={{
+                  width: '52px',
+                  padding: '4px 8px',
+                  backgroundColor: '#0f1117',
+                  border: '1px solid #2a2d3a',
+                  borderRadius: '4px',
+                  color: '#e8eaf0',
+                  fontSize: '13px',
+                  textAlign: 'center',
+                }}
+              />
+              <span style={{ color: '#5a5d70', fontSize: '12px' }}>min</span>
+            </div>
+          </div>
+        </SectionCard>
+      </section>
+
+      <section>
+        <SectionHeader title="Monitoring" />
+        <SectionCard>
+          <SettingRow label="Pause monitoring" value={settings.monitoringPaused} onChange={v => set('monitoringPaused', v)} />
+          <SettingRow label="Private mode" value={settings.privateModeEnabled} onChange={v => set('privateModeEnabled', v)} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0' }}>
+            <span style={{ color: '#e8eaf0', fontSize: '13px' }}>Capture interval</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input
+                type="number"
+                min={5}
+                max={60}
+                value={settings.captureIntervalSeconds}
+                onChange={e => set('captureIntervalSeconds', parseInt(e.target.value) || 10)}
+                style={{
+                  width: '52px',
+                  padding: '4px 8px',
+                  backgroundColor: '#0f1117',
+                  border: '1px solid #2a2d3a',
+                  borderRadius: '4px',
+                  color: '#e8eaf0',
+                  fontSize: '13px',
+                  textAlign: 'center',
+                }}
+              />
+              <span style={{ color: '#5a5d70', fontSize: '12px' }}>sec</span>
+            </div>
+          </div>
+        </SectionCard>
+      </section>
+
+      <section>
+        <SectionHeader title="AI" />
+        <SectionCard>
+          <SettingRow label="Use AI for ambiguous detection" value={settings.useAiClassifier} onChange={v => set('useAiClassifier', v)} />
+          <p style={{ color: '#5a5d70', fontSize: '11px', paddingBottom: '10px' }}>
+            When enabled, window title snippets may be processed by an AI model.
+          </p>
+        </SectionCard>
+      </section>
+
+      <section>
+        <SectionHeader title="Data" />
+        <SectionCard>
+          <div style={{ padding: '14px 0' }}>
+            <button
+              style={{
+                padding: '6px 14px',
+                borderRadius: '4px',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#ef4444',
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+            >
+              Clear all local data
+            </button>
+            <p style={{ color: '#5a5d70', fontSize: '11px', marginTop: '8px' }}>
+              This will remove all watched windows, task cards, and notification history.
+            </p>
+          </div>
+        </SectionCard>
+      </section>
+    </div>
+  )
+}
