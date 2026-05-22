@@ -2,6 +2,7 @@ import { BrowserWindow } from 'electron'
 import { listOpenWindows } from './window-monitor-service'
 import { getTaskCards, saveTaskCard, getSettings, getDetectionRules } from './storage-service'
 import { runDetection } from './detection-engine'
+import { maybeNotify } from './notification-service'
 import type { TaskStatus } from '../../shared/types'
 
 const SKIP_STATUSES: TaskStatus[] = ['DONE', 'IGNORED']
@@ -44,7 +45,9 @@ async function tick(): Promise<void> {
     }
 
     if (newStatus !== card.status) {
-      saveTaskCard({ ...card, status: newStatus, lastStateChangeAt: now, lastSeenAt: now })
+      const updatedCard = { ...card, status: newStatus, lastStateChangeAt: now, lastSeenAt: now }
+      saveTaskCard(updatedCard)
+      maybeNotify(updatedCard, settings)
       changed = true
     }
   }

@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
-import type { StorageSchema, WatchedWindow, TaskCard, DetectionRule, UserSettings } from '../../shared/types'
+import type { StorageSchema, WatchedWindow, TaskCard, DetectionRule, UserSettings, NotificationEvent } from '../../shared/types'
 
 const DEFAULT_RULES: DetectionRule[] = [
   {
@@ -139,6 +139,16 @@ export function saveDetectionRule(rule: DetectionRule): void {
 export function removeDetectionRule(id: string): void {
   const data = read()
   data.detectionRules = data.detectionRules.filter(r => r.id !== id)
+  write(data)
+}
+
+export function saveNotificationEvent(event: NotificationEvent): void {
+  const data = read()
+  data.notificationHistory.push(event)
+  // Keep last 200 notifications only
+  if (data.notificationHistory.length > 200) {
+    data.notificationHistory = data.notificationHistory.slice(-200)
+  }
   write(data)
 }
 
