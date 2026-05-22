@@ -31,11 +31,33 @@
   "build": {
     "appId": "com.zeroorigins.deskkeeper",
     "productName": "DeskKeeper",
+    "copyright": "Copyright © 2025 ZeroOrigins AI",
     "directories": {
+      "buildResources": "build",
       "output": "dist"
     },
+    "files": [
+      "out/**/*",
+      "!out/**/*.map"
+    ],
     "win": {
-      "target": "nsis"
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "${productName}-${version}-win-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
     }
   }
 }

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DeskKeeper</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        width: 280px;
+        padding: 16px;
+        background: #0f1117;
+        color: #e2e8f0;
+      }
+      .header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+      .header-title { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; }
+      .status { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .dot.connected { background: #22c55e; }
+      .dot.disconnected { background: #ef4444; }
+      .dot.checking { background: #94a3b8; animation: pulse 1s infinite; }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+      .status-label { font-size: 13px; color: #94a3b8; }
+      .tab-url {
+        font-size: 11px;
+        color: #475569;
+        word-break: break-all;
+        padding: 8px;
+        background: #1e2433;
+        border-radius: 4px;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <span class="header-title">DeskKeeper</span>
+    </div>
+    <div class="status">
+      <div class="dot checking" id="dot"></div>
+      <span class="status-label" id="status-label">Connecting...</span>
+    </div>
+    <div class="tab-url" id="tab-url">—</div>
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>

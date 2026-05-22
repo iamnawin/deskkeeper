@@ -4,6 +4,7 @@ import { getTaskCards, saveTaskCard, getSettings, getDetectionRules } from './st
 import { runDetection } from './detection-engine'
 import { maybeNotify } from './notification-service'
 import { captureWindow } from './capture-service'
+import { classify } from './ai-classifier'
 import type { TaskStatus } from '../../shared/types'
 
 const SKIP_STATUSES: TaskStatus[] = ['DONE', 'IGNORED']
@@ -39,10 +40,15 @@ async function tick(): Promise<void> {
       newStatus = 'IDLE'
     } else {
       const { visibleText } = await captureWindow(card.windowId)
-      const result = runDetection(
-        { windowId: card.windowId, windowTitle: openWin.title, appName: card.appName, visibleText, now },
-        rules,
-      )
+      const detectionInput = { windowId: card.windowId, windowTitle: openWin.title, appName: card.appName, visibleText, now }
+      let result = runDetection(detectionInput, rules)
+
+      // AI classifier runs only when explicitly enabled and rule confidence is low
+      if (settings.useAiClassifier && result.confidence < 0.5) {
+        const aiResult = await classify(detectionInput)
+        if (aiResult !== null) result = aiResult
+      }
+
       newStatus = result.status
     }
 

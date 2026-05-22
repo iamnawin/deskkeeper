@@ -3,6 +3,7 @@ import { join } from 'path'
 import { registerWindowIpc } from './ipc/window-ipc'
 import { seedDefaultRules } from './services/storage-service'
 import { startPolling, stopPolling } from './services/polling-service'
+import { startExtensionBridge, stopExtensionBridge } from './services/extension-bridge'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -36,6 +37,7 @@ app.whenReady().then(() => {
   registerWindowIpc()
   createWindow()
   startPolling()
+  startExtensionBridge()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -43,5 +45,6 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   stopPolling()
+  stopExtensionBridge()
   if (process.platform !== 'darwin') app.quit()
 })
