@@ -1,7 +1,19 @@
-import { mockRules } from '../lib/mock-data'
+import { useState, useEffect, useCallback } from 'react'
 import StatusBadge from '../components/StatusBadge'
+import type { DetectionRule } from '../../shared/types'
 
 export default function Rules() {
+  const [rules, setRules] = useState<DetectionRule[]>([])
+
+  const refresh = useCallback(async () => {
+    const list = await window.deskkeeper.getDetectionRules()
+    setRules(list)
+  }, [])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div>
@@ -14,7 +26,7 @@ export default function Rules() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {mockRules.map(rule => (
+        {rules.map(rule => (
           <div
             key={rule.id}
             style={{
@@ -55,6 +67,9 @@ export default function Rules() {
             </p>
           </div>
         ))}
+        {rules.length === 0 && (
+          <p style={{ color: '#5a5d70', fontSize: '13px' }}>No detection rules loaded.</p>
+        )}
       </div>
     </div>
   )

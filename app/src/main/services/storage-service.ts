@@ -1,7 +1,42 @@
 import { app } from 'electron'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
-import type { StorageSchema, WatchedWindow, TaskCard } from '../../shared/types'
+import type { StorageSchema, WatchedWindow, TaskCard, DetectionRule, UserSettings } from '../../shared/types'
+
+const DEFAULT_RULES: DetectionRule[] = [
+  {
+    id: 'rule-waiting',
+    label: 'Waiting for User Input',
+    status: 'WAITING_FOR_USER',
+    keywords: ['waiting for user', 'input required', 'your turn', 'action required', 'confirm', 'waiting...'],
+    priority: 'HIGH',
+    suggestedAction: 'Check this window — it needs your attention.',
+  },
+  {
+    id: 'rule-failed',
+    label: 'Task Failed',
+    status: 'FAILED',
+    keywords: ['error', 'failed', 'failure', 'exception', 'timed out', 'timeout', 'cannot connect', 'not found'],
+    priority: 'HIGH',
+    suggestedAction: 'Review the error and take action.',
+  },
+  {
+    id: 'rule-running',
+    label: 'Task in Progress',
+    status: 'RUNNING',
+    keywords: ['loading', 'processing', 'running', 'building', 'compiling', 'generating', 'uploading', 'downloading', 'installing', 'syncing', 'rendering', 'exporting'],
+    priority: 'MEDIUM',
+    suggestedAction: 'Task is running. Check back when complete.',
+  },
+  {
+    id: 'rule-completed',
+    label: 'Task Completed',
+    status: 'COMPLETED',
+    keywords: ['completed', 'done', 'finished', 'success', 'complete', 'deployed', 'build succeeded', 'all tests passed'],
+    priority: 'LOW',
+    suggestedAction: 'Task is done. Review the result.',
+  },
+]
 
 const EMPTY: StorageSchema = {
   watchedWindows: [],
@@ -77,4 +112,40 @@ export function removeTaskCard(id: string): void {
   const data = read()
   data.taskCards = data.taskCards.filter(c => c.id !== id)
   write(data)
+}
+
+export function getSettings(): UserSettings {
+  return read().settings
+}
+
+export function saveSettings(settings: Partial<UserSettings>): void {
+  const data = read()
+  data.settings = { ...data.settings, ...settings }
+  write(data)
+}
+
+export function getDetectionRules(): DetectionRule[] {
+  return read().detectionRules
+}
+
+export function saveDetectionRule(rule: DetectionRule): void {
+  const data = read()
+  const idx = data.detectionRules.findIndex(r => r.id === rule.id)
+  if (idx >= 0) data.detectionRules[idx] = rule
+  else data.detectionRules.push(rule)
+  write(data)
+}
+
+export function removeDetectionRule(id: string): void {
+  const data = read()
+  data.detectionRules = data.detectionRules.filter(r => r.id !== id)
+  write(data)
+}
+
+export function seedDefaultRules(): void {
+  const data = read()
+  if (data.detectionRules.length === 0) {
+    data.detectionRules = DEFAULT_RULES
+    write(data)
+  }
 }

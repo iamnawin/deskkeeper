@@ -1,6 +1,8 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { registerWindowIpc } from './ipc/window-ipc'
+import { seedDefaultRules } from './services/storage-service'
+import { startPolling, stopPolling } from './services/polling-service'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -30,13 +32,16 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  seedDefaultRules()
   registerWindowIpc()
   createWindow()
+  startPolling()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
 app.on('window-all-closed', () => {
+  stopPolling()
   if (process.platform !== 'darwin') app.quit()
 })

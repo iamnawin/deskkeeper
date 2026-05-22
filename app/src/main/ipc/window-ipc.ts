@@ -7,8 +7,12 @@ import {
   getTaskCards,
   saveTaskCard,
   removeTaskCard,
+  getDetectionRules,
+  saveDetectionRule,
+  removeDetectionRule,
 } from '../services/storage-service'
-import type { TaskCard } from '../../shared/types'
+import { startPolling, stopPolling, isPolling } from '../services/polling-service'
+import type { TaskCard, DetectionRule } from '../../shared/types'
 
 export function registerWindowIpc(): void {
   ipcMain.handle('windows:list', async () => {
@@ -55,4 +59,18 @@ export function registerWindowIpc(): void {
   ipcMain.handle('taskCards:remove', (_event, cardId: string) => {
     removeTaskCard(cardId)
   })
+
+  ipcMain.handle('detection:get-rules', () => getDetectionRules())
+
+  ipcMain.handle('detection:save-rule', (_event, rule: DetectionRule) => {
+    saveDetectionRule(rule)
+  })
+
+  ipcMain.handle('detection:delete-rule', (_event, ruleId: string) => {
+    removeDetectionRule(ruleId)
+  })
+
+  ipcMain.handle('polling:start', () => { startPolling() })
+  ipcMain.handle('polling:stop', () => { stopPolling() })
+  ipcMain.handle('polling:status', () => ({ running: isPolling() }))
 }

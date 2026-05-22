@@ -54,6 +54,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     refresh()
+    const cleanup = window.deskkeeper.onTaskCardsUpdated(refresh)
+    return cleanup
   }, [refresh])
 
   const groups = groupCards(cards)
