@@ -1,17 +1,40 @@
+import { useState, useEffect, useCallback } from 'react'
 import { Plus } from 'lucide-react'
 import WindowCard from '../components/WindowCard'
 import EmptyState from '../components/EmptyState'
-import { mockWindows } from '../lib/mock-data'
+import type { WatchedWindow } from '../../shared/types'
 
 export default function WatchedWindows() {
-  const watched = mockWindows.filter(w => w.isWatched)
-  const available = mockWindows.filter(w => !w.isWatched)
+  const [windows, setWindows] = useState<WatchedWindow[]>([])
+
+  const refresh = useCallback(async () => {
+    const list = await window.deskkeeper.listWindows()
+    setWindows(list)
+  }, [])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  const handleWatch = useCallback(async (id: string) => {
+    await window.deskkeeper.watchWindow(id)
+    await refresh()
+  }, [refresh])
+
+  const handleUnwatch = useCallback(async (id: string) => {
+    await window.deskkeeper.unwatchWindow(id)
+    await refresh()
+  }, [refresh])
+
+  const watched = windows.filter(w => w.isWatched)
+  const available = windows.filter(w => !w.isWatched)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 style={{ color: '#e8eaf0', fontWeight: 600, fontSize: '18px' }}>Watched Windows</h1>
         <button
+          onClick={refresh}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -26,7 +49,7 @@ export default function WatchedWindows() {
           }}
         >
           <Plus size={14} />
-          Add Window
+          Refresh
         </button>
       </div>
 
@@ -46,12 +69,12 @@ export default function WatchedWindows() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {watched.map(w => (
-              <WindowCard key={w.id} window={w} />
+              <WindowCard key={w.id} window={w} onUnwatch={handleUnwatch} />
             ))}
           </div>
         </section>
       ) : (
-        <EmptyState message="No windows are being watched. Click 'Add Window' to start." />
+        <EmptyState message="No windows are being watched. Click a window below to start watching." />
       )}
 
       {available.length > 0 && (
@@ -70,7 +93,7 @@ export default function WatchedWindows() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {available.map(w => (
-              <WindowCard key={w.id} window={w} />
+              <WindowCard key={w.id} window={w} onWatch={handleWatch} />
             ))}
           </div>
         </section>

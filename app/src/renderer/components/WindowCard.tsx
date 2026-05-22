@@ -1,10 +1,13 @@
 import { Eye, EyeOff, Monitor } from 'lucide-react'
-import { useState } from 'react'
 import { WatchedWindow } from '../../shared/types'
 
-export default function WindowCard({ window: win }: { window: WatchedWindow }) {
-  const [isWatched, setIsWatched] = useState(win.isWatched)
+interface WindowCardProps {
+  window: WatchedWindow
+  onWatch?: (id: string) => void
+  onUnwatch?: (id: string) => void
+}
 
+export default function WindowCard({ window: win, onWatch, onUnwatch }: WindowCardProps) {
   return (
     <div
       style={{
@@ -41,7 +44,7 @@ export default function WindowCard({ window: win }: { window: WatchedWindow }) {
       </div>
 
       <button
-        onClick={() => setIsWatched(!isWatched)}
+        onClick={() => win.isWatched ? onUnwatch?.(win.id) : onWatch?.(win.id)}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -51,12 +54,12 @@ export default function WindowCard({ window: win }: { window: WatchedWindow }) {
           fontSize: '11px',
           cursor: 'pointer',
           flexShrink: 0,
-          backgroundColor: isWatched ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-          border: `1px solid ${isWatched ? 'rgba(99, 102, 241, 0.4)' : '#2a2d3a'}`,
-          color: isWatched ? '#6366f1' : '#8b8fa8',
+          backgroundColor: win.isWatched ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+          border: `1px solid ${win.isWatched ? 'rgba(99, 102, 241, 0.4)' : '#2a2d3a'}`,
+          color: win.isWatched ? '#6366f1' : '#8b8fa8',
         }}
       >
-        {isWatched ? (
+        {win.isWatched ? (
           <>
             <Eye size={11} />
             Watching

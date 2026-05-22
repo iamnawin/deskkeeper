@@ -1,9 +1,9 @@
+import { useState, useEffect, useCallback } from 'react'
 import { AlertTriangle, Play, CheckCircle, Clock } from 'lucide-react'
 import SummaryMetricCard from '../components/SummaryMetricCard'
 import TaskCard from '../components/TaskCard'
 import EmptyState from '../components/EmptyState'
-import { mockTaskCards } from '../lib/mock-data'
-import { TaskCard as TaskCardType, TaskStatus } from '../../shared/types'
+import type { TaskCard as TaskCardType, TaskStatus } from '../../shared/types'
 
 const ATTENTION_STATUSES: TaskStatus[] = ['WAITING_FOR_USER', 'FAILED']
 const RUNNING_STATUSES: TaskStatus[] = ['RUNNING', 'ACTIVE']
@@ -45,8 +45,18 @@ function Section({ title, cards }: { title: string; cards: TaskCardType[] }) {
 }
 
 export default function Dashboard() {
-  const groups = groupCards(mockTaskCards)
-  const hasAny = mockTaskCards.length > 0
+  const [cards, setCards] = useState<TaskCardType[]>([])
+
+  const refresh = useCallback(async () => {
+    const list = await window.deskkeeper.getTaskCards()
+    setCards(list)
+  }, [])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  const groups = groupCards(cards)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -67,7 +77,7 @@ export default function Dashboard() {
       <Section title="Completed" cards={groups.completed} />
       <Section title="Idle" cards={groups.idle} />
 
-      {!hasAny && (
+      {cards.length === 0 && (
         <EmptyState message="No watched windows yet. Add windows from the Watched Windows tab to start monitoring." />
       )}
     </div>
