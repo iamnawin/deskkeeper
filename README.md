@@ -12,7 +12,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows_·_macOS_·_Linux-0ea5e9?style=flat-square)
 ![Runtime](https://img.shields.io/badge/Electron-2c2e3b?style=flat-square&logo=electron)
 ![UI](https://img.shields.io/badge/React_+_TypeScript-3178c6?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-33_passing-22c55e?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-35_passing-22c55e?style=flat-square)
 ![Privacy](https://img.shields.io/badge/privacy-local--first-8b5cf6?style=flat-square)
 
 </div>
@@ -166,11 +166,11 @@ deskkeeper/
 
 ```bash
 cd app
-pnpm test         # Vitest — 33 unit tests across detection, protocol, framing
+pnpm test         # Vitest — 35 tests across detection, protocol, framing, transport
 pnpm typecheck    # tsc --noEmit
 ```
 
-Unit tests cover the pure logic: detection merge, app heuristics, stale detection, the native-messaging framing codec, and the host↔app signal protocol.
+Tests cover the pure logic — detection merge, app heuristics, stale detection, the native-messaging framing codec, and the host↔app signal protocol — plus a live integration test that drives the real native host over stdio and asserts the named-pipe bridge round-trips end-to-end.
 
 ---
 
