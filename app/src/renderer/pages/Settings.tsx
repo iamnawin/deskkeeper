@@ -229,6 +229,16 @@ export default function Settings() {
       </section>
 
       <section>
+        <SectionHeader title="Deep capture" />
+        <SectionCard>
+          <SettingRow label="Read terminals & editors via on-screen OCR" value={settings.ocrCaptureEnabled} onChange={v => set('ocrCaptureEnabled', v)} />
+          <p style={{ color: '#5a5d70', fontSize: '11px', paddingBottom: '10px' }}>
+            Some apps (terminals inside VS Code / Antigravity) hide their text from accessibility. When enabled, DeskKeeper reads those windows by capturing the screen image and recognizing the text locally — the image is processed on your machine and discarded, never uploaded. Only runs for windows whose text is otherwise unreadable. Off by default.
+          </p>
+        </SectionCard>
+      </section>
+
+      <section>
         <SectionHeader title="Startup" />
         <SectionCard>
           <SettingRow label="Launch on login & run in tray" value={settings.launchOnLogin} onChange={v => set('launchOnLogin', v)} />

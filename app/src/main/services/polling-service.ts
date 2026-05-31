@@ -51,7 +51,7 @@ async function tick(): Promise<void> {
       title = activity.title
       lastActivityAt = activity.lastActivityAt
 
-      const { visibleText } = await captureWindow(card.windowId, openWin.title)
+      const { visibleText } = await captureWindow(card.windowId, openWin.title, { ocr: settings.ocrCaptureEnabled })
       const detectionInput = { windowId: card.windowId, windowTitle: openWin.title, appName: card.appName, visibleText, now }
       let result = runDetection(detectionInput, rules)
 

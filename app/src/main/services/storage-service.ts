@@ -54,6 +54,7 @@ const EMPTY: StorageSchema = {
     captureIntervalSeconds: 10,
     staleThresholdMinutes: 10,
     launchOnLogin: false,
+    ocrCaptureEnabled: false,
   },
   detectionRules: [],
 }

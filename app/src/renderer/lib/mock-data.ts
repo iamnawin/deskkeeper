@@ -194,4 +194,5 @@ export const mockSettings: UserSettings = {
   captureIntervalSeconds: 10,
   staleThresholdMinutes: 10,
   launchOnLogin: false,
+  ocrCaptureEnabled: false,
 }

@@ -93,6 +93,10 @@ export interface UserSettings {
   staleThresholdMinutes: number
   // Start DeskKeeper automatically when the user logs in (packaged builds only).
   launchOnLogin: boolean
+  // Read on-screen text from watched windows via local OCR when accessibility
+  // text is gated (e.g. terminals inside VS Code/Antigravity). Screenshots are
+  // processed locally and discarded — never uploaded. Off by default.
+  ocrCaptureEnabled: boolean
 }
 
 export interface StorageSchema {
