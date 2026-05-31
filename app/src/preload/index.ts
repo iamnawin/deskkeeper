@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('deskkeeper', {
   // Windows
   listWindows: () => ipcRenderer.invoke('windows:list'),
   watchWindow: (windowId: string) => ipcRenderer.invoke('windows:watch', windowId),
+  watchAllWindows: () => ipcRenderer.invoke('windows:watch-all'),
   unwatchWindow: (windowId: string) => ipcRenderer.invoke('windows:unwatch', windowId),
   getWatchedWindows: () => ipcRenderer.invoke('windows:watched-list'),
 

@@ -7,6 +7,7 @@ declare global {
 
       listWindows: () => Promise<WatchedWindow[]>
       watchWindow: (windowId: string) => Promise<void>
+      watchAllWindows: () => Promise<void>
       unwatchWindow: (windowId: string) => Promise<void>
       getWatchedWindows: () => Promise<WatchedWindow[]>
 

@@ -1,9 +1,8 @@
 import { createServer, Server } from 'http'
 import { BrowserWindow } from 'electron'
-import { getSettings, saveTaskCard, getTaskCards, getDetectionRules } from './storage-service'
-import { runDetection } from './detection-engine'
+import { getSettings, saveTaskCard, getTaskCards } from './storage-service'
 import { maybeNotify } from './notification-service'
-import type { TaskCard } from '../../shared/types'
+import type { TaskCard, TaskStatus } from '../../shared/types'
 
 export const BRIDGE_PORT = 7420
 
@@ -16,9 +15,39 @@ interface TabSignal {
 }
 
 let server: Server | null = null
+let notifyTimer: ReturnType<typeof setTimeout> | null = null
 
+// Coalesce rapid signal bursts (e.g. fast tab switching) into a single renderer
+// refresh so the UI doesn't re-render the whole task list on every signal.
 function notifyRenderer(): void {
-  BrowserWindow.getAllWindows()[0]?.webContents.send('taskCards:updated')
+  if (notifyTimer !== null) return
+  notifyTimer = setTimeout(() => {
+    notifyTimer = null
+    BrowserWindow.getAllWindows()[0]?.webContents.send('taskCards:updated')
+  }, 250)
+}
+
+interface Detected {
+  status: TaskStatus
+  detectedReason: string
+  suggestedAction: string
+}
+
+// Map the content-script's structured page signal to a task state. We trust the
+// DOM-based detectedState (real error element, progress bar, incomplete form)
+// rather than keyword-matching arbitrary page text — the words "error"/"failed"
+// appear on countless normal pages and produced constant false FAILED alerts.
+function detectFromSignal(signal: TabSignal): Detected {
+  switch (signal.detectedState) {
+    case 'error-visible':
+      return { status: 'FAILED', detectedReason: 'Error visible on page', suggestedAction: 'Review the error on this tab.' }
+    case 'form-incomplete':
+      return { status: 'WAITING_FOR_USER', detectedReason: 'Form needs input', suggestedAction: 'This tab has an incomplete form.' }
+    case 'upload-in-progress':
+      return { status: 'RUNNING', detectedReason: 'Upload in progress', suggestedAction: 'Upload running — check back when complete.' }
+    default:
+      return { status: 'ACTIVE', detectedReason: 'Active tab', suggestedAction: '' }
+  }
 }
 
 function handleSignal(signal: TabSignal): void {
@@ -27,12 +56,7 @@ function handleSignal(signal: TabSignal): void {
 
   const windowId = `ext-tab-${signal.tabId}`
   const now = new Date().toISOString()
-  const rules = getDetectionRules()
-
-  const result = runDetection(
-    { windowId, windowTitle: signal.title, appName: 'Chrome', visibleText: signal.visibleText, now },
-    rules,
-  )
+  const result = detectFromSignal(signal)
 
   const existing = getTaskCards().find(c => c.windowId === windowId)
 

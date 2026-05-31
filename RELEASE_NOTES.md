@@ -2,6 +2,38 @@
 
 ---
 
+## v0.1.1 — Detection accuracy & watch UX (2026-05-30)
+
+Point release fixing a false-notification flood and reducing watch friction.
+
+### Fixed
+
+- **Recurring false "Chrome failed" notifications.** The extension bridge was
+  keyword-matching the 500-char page-body excerpt sent by the content script —
+  the words "error"/"failed" appear on countless normal pages, producing a
+  constant false `FAILED` state that re-fired every cooldown window. The bridge
+  now maps the content script's structured DOM signal (`detectedState`) instead:
+  `error-visible → FAILED`, `form-incomplete → WAITING_FOR_USER`,
+  `upload-in-progress → RUNNING`, otherwise `ACTIVE`. No page text is
+  keyword-scanned. (`app/src/main/services/extension-bridge.ts`)
+
+### Added
+
+- **"Watch All" button** on the Watched Windows page. One click watches every
+  currently-listed window instead of clicking each individually. Still an
+  explicit user action — default monitoring of all windows remains off, per the
+  privacy model. (`window-ipc.ts`, `preload/index.ts`, `globals.d.ts`,
+  `pages/WatchedWindows.tsx`)
+
+### Known issue
+
+- Extension tab cards (`ext-tab-*`) revert to `IDLE` ~10s after detection
+  because the polling loop only sees real OS windows from `desktopCapturer`, not
+  browser tabs. The notification still fires correctly; only the dashboard card
+  status reverts. Fix pending in `polling-service.ts` (skip `ext-tab-*` cards).
+
+---
+
 ## v0.1.0 — MVP Release (2026-05-22)
 
 First complete build of DeskKeeper AI. All 10 phases shipped.

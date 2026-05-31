@@ -33,6 +33,9 @@ export interface TaskCard {
   suggestedAction?: string
   lastSeenAt: string
   lastStateChangeAt: string
+  // Last tick the window's title changed — used to detect frozen/hung work.
+  // Distinct from lastStateChangeAt, which only moves on a status transition.
+  lastActivityAt?: string
   snoozedUntil?: string
   isIgnored?: boolean
   isDone?: boolean
@@ -85,6 +88,9 @@ export interface UserSettings {
   monitoringPaused: boolean
   useAiClassifier: boolean
   captureIntervalSeconds: number
+  // Minutes an in-progress (RUNNING) window may show no title change before it
+  // is treated as stalled/hung and surfaced as WAITING_FOR_USER.
+  staleThresholdMinutes: number
 }
 
 export interface StorageSchema {

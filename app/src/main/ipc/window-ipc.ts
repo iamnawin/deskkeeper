@@ -46,6 +46,26 @@ export function registerWindowIpc(): void {
     saveTaskCard(card)
   })
 
+  ipcMain.handle('windows:watch-all', async () => {
+    const open = await listOpenWindows()
+    const watchedIds = new Set(getWatchedWindows().map(w => w.id))
+    const now = new Date().toISOString()
+    for (const win of open) {
+      if (watchedIds.has(win.id)) continue
+      saveWatchedWindow({ ...win, isWatched: true, createdAt: now, lastSeenAt: now })
+      saveTaskCard({
+        id: `tc-${win.id.replace(/[^a-z0-9]/gi, '-')}`,
+        windowId: win.id,
+        title: win.title,
+        appName: win.appName,
+        status: 'ACTIVE',
+        priority: 'MEDIUM',
+        lastSeenAt: now,
+        lastStateChangeAt: now,
+      })
+    }
+  })
+
   ipcMain.handle('windows:unwatch', (_event, windowId: string) => {
     removeWatchedWindow(windowId)
   })

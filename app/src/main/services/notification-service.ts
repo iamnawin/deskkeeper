@@ -39,6 +39,7 @@ function buildMessage(card: TaskCard): { title: string; body: string } {
 export function maybeNotify(card: TaskCard, settings: UserSettings): void {
   if (!NOTIFY_STATUSES.includes(card.status)) return
   if (!shouldNotify(card, settings)) return
+  if (!Notification.isSupported()) return
 
   const { title, body } = buildMessage(card)
 

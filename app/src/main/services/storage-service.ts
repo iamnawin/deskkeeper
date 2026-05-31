@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, writeFile, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import type { StorageSchema, WatchedWindow, TaskCard, DetectionRule, UserSettings, NotificationEvent } from '../../shared/types'
 
@@ -52,6 +52,7 @@ const EMPTY: StorageSchema = {
     monitoringPaused: false,
     useAiClassifier: false,
     captureIntervalSeconds: 10,
+    staleThresholdMinutes: 10,
   },
   detectionRules: [],
 }
@@ -60,21 +61,56 @@ function storagePath(): string {
   return join(app.getPath('userData'), 'deskkeeper-storage.json')
 }
 
+// In-memory cache: the file is read from disk once, then served from memory.
+// Writes mutate the cache in place and are flushed to disk asynchronously and
+// debounced, so frequent operations (polling, extension signals) never block
+// the main process on synchronous disk I/O.
+let cache: StorageSchema | null = null
+let flushTimer: ReturnType<typeof setTimeout> | null = null
+
 function read(): StorageSchema {
+  if (cache) return cache
   const p = storagePath()
-  if (!existsSync(p)) return { ...EMPTY, settings: { ...EMPTY.settings } }
-  try {
-    return JSON.parse(readFileSync(p, 'utf-8')) as StorageSchema
-  } catch {
-    return { ...EMPTY, settings: { ...EMPTY.settings } }
+  if (!existsSync(p)) {
+    cache = { ...EMPTY, settings: { ...EMPTY.settings } }
+    return cache
   }
+  try {
+    cache = JSON.parse(readFileSync(p, 'utf-8')) as StorageSchema
+  } catch {
+    cache = { ...EMPTY, settings: { ...EMPTY.settings } }
+  }
+  return cache
 }
 
-function write(data: StorageSchema): void {
+function flushNow(sync = false): void {
+  if (!cache) return
   const p = storagePath()
   const dir = dirname(p)
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  writeFileSync(p, JSON.stringify(data, null, 2), 'utf-8')
+  const json = JSON.stringify(cache, null, 2)
+  if (sync) writeFileSync(p, json, 'utf-8')
+  else writeFile(p, json, 'utf-8', () => {})
+}
+
+// read() returns the live cache, so callers mutate it in place; write() only
+// needs to schedule a debounced flush to disk.
+function write(_data: StorageSchema): void {
+  if (flushTimer !== null) return
+  flushTimer = setTimeout(() => {
+    flushTimer = null
+    flushNow(false)
+  }, 300)
+}
+
+// Flush any pending writes synchronously — call before the app quits so the
+// debounced in-memory state is never lost.
+export function flushStorage(): void {
+  if (flushTimer !== null) {
+    clearTimeout(flushTimer)
+    flushTimer = null
+  }
+  flushNow(true)
 }
 
 export function getWatchedWindows(): WatchedWindow[] {

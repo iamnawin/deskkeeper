@@ -192,4 +192,5 @@ export const mockSettings: UserSettings = {
   monitoringPaused: false,
   useAiClassifier: false,
   captureIntervalSeconds: 10,
+  staleThresholdMinutes: 10,
 }

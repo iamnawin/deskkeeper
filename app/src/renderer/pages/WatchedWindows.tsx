@@ -21,6 +21,11 @@ export default function WatchedWindows() {
     await refresh()
   }, [refresh])
 
+  const handleWatchAll = useCallback(async () => {
+    await window.deskkeeper.watchAllWindows()
+    await refresh()
+  }, [refresh])
+
   const handleUnwatch = useCallback(async (id: string) => {
     await window.deskkeeper.unwatchWindow(id)
     await refresh()
@@ -79,18 +84,40 @@ export default function WatchedWindows() {
 
       {available.length > 0 && (
         <section>
-          <h2
+          <div
             style={{
-              color: '#8b8fa8',
-              fontSize: '11px',
-              fontWeight: 500,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               marginBottom: '10px',
             }}
           >
-            Available to Watch ({available.length})
-          </h2>
+            <h2
+              style={{
+                color: '#8b8fa8',
+                fontSize: '11px',
+                fontWeight: 500,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}
+            >
+              Available to Watch ({available.length})
+            </h2>
+            <button
+              onClick={handleWatchAll}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '4px',
+                backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+                color: '#6366f1',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              Watch All ({available.length})
+            </button>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {available.map(w => (
               <WindowCard key={w.id} window={w} onWatch={handleWatch} />

@@ -5,6 +5,7 @@ import { runDetection } from './detection-engine'
 import { maybeNotify } from './notification-service'
 import { captureWindow } from './capture-service'
 import { classify } from './ai-classifier'
+import { recordActivity, isStale } from './stale-detection'
 import type { TaskStatus } from '../../shared/types'
 
 const SKIP_STATUSES: TaskStatus[] = ['DONE', 'IGNORED']
@@ -35,10 +36,20 @@ async function tick(): Promise<void> {
 
     const openWin = openById.get(card.windowId)
     let newStatus: TaskStatus
+    let reason = card.detectedReason
+    let suggested = card.suggestedAction
+    let title = card.title
+    let lastActivityAt = card.lastActivityAt ?? card.lastStateChangeAt
 
     if (!openWin) {
       newStatus = 'IDLE'
     } else {
+      // Track title-change activity before detection so a frozen window accrues
+      // staleness even while its status stays RUNNING.
+      const activity = recordActivity(card, openWin.title, now)
+      title = activity.title
+      lastActivityAt = activity.lastActivityAt
+
       const { visibleText } = await captureWindow(card.windowId)
       const detectionInput = { windowId: card.windowId, windowTitle: openWin.title, appName: card.appName, visibleText, now }
       let result = runDetection(detectionInput, rules)
@@ -50,12 +61,33 @@ async function tick(): Promise<void> {
       }
 
       newStatus = result.status
+      reason = result.detectedReason
+      suggested = result.suggestedAction
+
+      // A RUNNING window whose title has gone quiet past the threshold looks
+      // hung — surface it for attention instead of leaving it silently running.
+      if (isStale(newStatus, lastActivityAt, settings, now)) {
+        newStatus = 'WAITING_FOR_USER'
+        reason = `Appears stalled — no change for ${settings.staleThresholdMinutes} min`
+        suggested = 'Check this window — the task may be stuck.'
+      }
     }
 
-    if (newStatus !== card.status) {
-      const updatedCard = { ...card, status: newStatus, lastStateChangeAt: now, lastSeenAt: now }
+    const statusChanged = newStatus !== card.status
+    const titleChanged = title !== card.title
+
+    if (statusChanged || titleChanged) {
+      const updatedCard = {
+        ...card,
+        status: newStatus,
+        title,
+        lastActivityAt,
+        lastSeenAt: openWin ? now : card.lastSeenAt,
+        lastStateChangeAt: statusChanged ? now : card.lastStateChangeAt,
+        ...(statusChanged ? { detectedReason: reason, suggestedAction: suggested } : {}),
+      }
       saveTaskCard(updatedCard)
-      maybeNotify(updatedCard, settings)
+      if (statusChanged) maybeNotify(updatedCard, settings)
       changed = true
     }
   }

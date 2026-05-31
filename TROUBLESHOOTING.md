@@ -10,6 +10,7 @@
 
 **Fix**: 
 - Go to **Watched Windows** → click any available window → click **Watch**
+  (or use **Watch All** to watch every listed window at once)
 - Or go to **Settings → Demo → Load demo data** to see sample task cards
 
 ---
@@ -101,6 +102,20 @@ If it still fails, run the terminal as Administrator.
 **Cause**: You loaded the wrong folder in Chrome — the extension source, not the built dist.
 
 **Fix**: In Chrome → Extensions → Load unpacked, select `extension/dist/` (not `extension/`)
+
+---
+
+### Recurring false "Chrome failed" / "Task failed" notifications
+
+**Cause** (fixed in v0.1.1): older builds keyword-matched the page-body text the
+content script sends. Words like "error" and "failed" appear on normal pages, so
+a `FAILED` card was created and re-notified every cooldown window.
+
+**Fix**:
+1. Update to v0.1.1 or later — the bridge now uses the content script's
+   structured DOM signal (`detectedState`) and never keyword-scans page text.
+2. If a stale false card persists, go to **Settings → Data → Clear all local
+   data** to remove it (settings and detection rules are preserved).
 
 ---
 

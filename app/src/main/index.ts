@@ -1,7 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { registerWindowIpc } from './ipc/window-ipc'
-import { seedDefaultRules } from './services/storage-service'
+import { seedDefaultRules, flushStorage } from './services/storage-service'
 import { startPolling, stopPolling } from './services/polling-service'
 import { startExtensionBridge, stopExtensionBridge } from './services/extension-bridge'
 
@@ -33,6 +33,9 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Required on Windows for Notification.show() to display toasts (especially
+  // in dev / unpackaged runs). Must match the appId used at packaging time.
+  if (process.platform === 'win32') app.setAppUserModelId('com.zeroorigins.deskkeeper')
   seedDefaultRules()
   registerWindowIpc()
   createWindow()
@@ -47,4 +50,9 @@ app.on('window-all-closed', () => {
   stopPolling()
   stopExtensionBridge()
   if (process.platform !== 'darwin') app.quit()
+})
+
+// Persist any debounced in-memory storage changes before the process exits.
+app.on('before-quit', () => {
+  flushStorage()
 })

@@ -149,3 +149,58 @@
 - [ ] Auto-launch on startup option
 - [ ] Tray icon with quick actions
 - [ ] Local development documentation
+
+---
+
+## Phase 10 — Product Hardening
+
+**Goal**: Make DeskKeeper distributable as a real product. Fix the gaps that break it outside a dev environment.
+
+### Priority 1 — Replace HTTP Extension Bridge (Critical)
+
+The current `extension-bridge.ts` runs a localhost HTTP server on port 7420. This breaks when:
+- Electron isn't running when the browser opens
+- Firewall blocks the port
+- Another process owns the port
+
+**Decision**: Replace with Chrome Native Messaging.
+- Extension sends messages via `chrome.runtime.sendNativeMessage`
+- Electron registers as a native messaging host in the Windows registry
+- No server, no port, no polling — push-only when extension has something to say
+- Update `CHROME_EXTENSION_STRATEGY.md` with this decision
+
+### Priority 2 — Fix Stale/Hang Detection (High)
+
+The polling loop has no awareness of time. A window that stops changing stays at its last known state forever — no "hung" or "stale" detection.
+
+**Decision**: Add stale check to the polling tick in `polling-service.ts`.
+- If `lastStateChangeAt` is older than threshold (e.g., 5 min) and status is RUNNING → emit IDLE
+- If older than threshold and status is WAITING_FOR_USER → re-notify
+- Threshold configurable via settings
+
+### Priority 3 — App-Specific Title Heuristics (High)
+
+Detection currently matches generic keywords against window titles only (`capture-service.ts` always returns `undefined` visibleText). Add app-aware patterns.
+
+**Decision**: Extend `detection-rules.ts` with app-specific matchers:
+- Zoom: title loses call participant count → call dropped
+- VS Code: `●` prefix → unsaved file
+- Chrome: `(1)` prefix or "not responding" → attention needed
+- Slack: `(N)` prefix → unread DMs
+
+### Priority 4 — Capture Service Stub (Medium)
+
+`capture-service.ts` returns `{ visibleText: undefined }` unconditionally. Detection engine never gets screen content.
+
+**Decision**: Implement title-based heuristic extraction as the capture fallback (no OCR required).
+- Parse structured info from window titles (app name, document name, state indicators)
+- Return structured `visibleText` string the detection engine can use
+- Real OCR stays as Phase 6 — this is a pragmatic bridge
+
+- [ ] Replace HTTP bridge with Chrome Native Messaging
+- [x] Add stale/hang detection to polling tick
+- [ ] Add app-specific title heuristics (Zoom, VS Code, Chrome, Slack)
+- [ ] Fix capture-service stub with title-parsing fallback
+- [ ] Update CHROME_EXTENSION_STRATEGY.md with native messaging decision
+- [ ] Update DETECTION_RULES.md with app-specific patterns
+- [ ] Update RISKS_AND_LIMITATIONS.md to remove HTTP bridge as a risk (resolved)
