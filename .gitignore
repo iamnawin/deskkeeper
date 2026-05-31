@@ -10,6 +10,10 @@ app/electron.vite.config.*.mjs
 # Electron build artifacts
 app/release/
 
+# Extension build output
+extension/dist/
+extension/node_modules/
+
 # Local data files
 ruvector.db
 *.db

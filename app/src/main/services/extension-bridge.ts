@@ -1,20 +1,17 @@
-import { createServer, Server } from 'http'
+import net from 'net'
+import { existsSync, unlinkSync } from 'fs'
 import { BrowserWindow } from 'electron'
 import { getSettings, saveTaskCard, getTaskCards } from './storage-service'
 import { maybeNotify } from './notification-service'
+import { parseNdjson, type TabSignal } from './signal-protocol'
 import type { TaskCard, TaskStatus } from '../../shared/types'
 
-export const BRIDGE_PORT = 7420
+// Local named pipe the native messaging host forwards tab signals to. Not a TCP
+// port: no firewall surface, no port-conflict, no listening network socket.
+export const PIPE_PATH =
+  process.platform === 'win32' ? '\\\\.\\pipe\\deskkeeper-bridge' : '/tmp/deskkeeper-bridge.sock'
 
-interface TabSignal {
-  tabId: number
-  url: string
-  title: string
-  visibleText?: string
-  detectedState?: string
-}
-
-let server: Server | null = null
+let server: net.Server | null = null
 let notifyTimer: ReturnType<typeof setTimeout> | null = null
 
 // Coalesce rapid signal bursts (e.g. fast tab switching) into a single renderer
@@ -98,44 +95,32 @@ function handleSignal(signal: TabSignal): void {
 export function startExtensionBridge(): void {
   if (server !== null) return
 
-  server = createServer((req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204)
-      res.end()
-      return
+  // A stale unix-socket file blocks listen() after an unclean exit (no-op on Windows pipes).
+  if (process.platform !== 'win32' && existsSync(PIPE_PATH)) {
+    try {
+      unlinkSync(PIPE_PATH)
+    } catch {
+      // best effort
     }
+  }
 
-    if (req.method === 'GET' && req.url === '/status') {
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ running: true }))
-      return
-    }
-
-    if (req.method === 'POST' && req.url === '/signal') {
-      let body = ''
-      req.on('data', chunk => { body += String(chunk) })
-      req.on('end', () => {
-        try {
-          handleSignal(JSON.parse(body) as TabSignal)
-          res.writeHead(200, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ ok: true }))
-        } catch {
-          res.writeHead(400)
-          res.end()
-        }
-      })
-      return
-    }
-
-    res.writeHead(404)
-    res.end()
+  server = net.createServer(socket => {
+    let buffer = ''
+    socket.on('data', chunk => {
+      buffer += chunk.toString('utf8')
+      const { signals, rest } = parseNdjson(buffer)
+      buffer = rest
+      for (const signal of signals) handleSignal(signal)
+    })
+    socket.on('error', () => {
+      // client (native host) disconnected — nothing to do
+    })
   })
 
-  server.listen(BRIDGE_PORT)
+  server.on('error', () => {
+    // pipe unavailable; bridge stays down rather than crashing the app
+  })
+  server.listen(PIPE_PATH)
 }
 
 export function stopExtensionBridge(): void {

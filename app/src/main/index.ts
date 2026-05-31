@@ -4,6 +4,7 @@ import { registerWindowIpc } from './ipc/window-ipc'
 import { seedDefaultRules, flushStorage } from './services/storage-service'
 import { startPolling, stopPolling } from './services/polling-service'
 import { startExtensionBridge, stopExtensionBridge } from './services/extension-bridge'
+import { registerNativeHost } from './services/native-host-service'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -40,6 +41,7 @@ app.whenReady().then(() => {
   registerWindowIpc()
   createWindow()
   startPolling()
+  registerNativeHost()
   startExtensionBridge()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

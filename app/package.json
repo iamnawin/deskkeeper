@@ -50,6 +50,13 @@
       "out/**/*",
       "!out/**/*.map"
     ],
+    "extraResources": [
+      {
+        "from": "native-host",
+        "to": "native-host",
+        "filter": ["**/*.js", "!**/*.test.js"]
+      }
+    ],
     "win": {
       "target": [
         {

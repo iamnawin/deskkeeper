@@ -1,12 +1,23 @@
-const BRIDGE_URL = 'http://localhost:7420'
+const HOST_NAME = 'com.zeroorigins.deskkeeper'
 
-async function checkConnection(): Promise<boolean> {
-  try {
-    const res = await fetch(`${BRIDGE_URL}/status`, { signal: AbortSignal.timeout(2000) })
-    return res.ok
-  } catch {
-    return false
-  }
+interface PongMessage {
+  type: 'pong'
+  electron: boolean
+}
+
+// Ping the native host (one-shot). It replies with whether the desktop app's
+// pipe accepted a connection, so we can tell "app running" from "host missing".
+function checkConnection(): Promise<boolean> {
+  return new Promise(resolve => {
+    try {
+      chrome.runtime.sendNativeMessage(HOST_NAME, { type: 'ping' }, (response?: PongMessage) => {
+        if (chrome.runtime.lastError || !response) return resolve(false)
+        resolve(response.electron === true)
+      })
+    } catch {
+      resolve(false)
+    }
+  })
 }
 
 async function init(): Promise<void> {

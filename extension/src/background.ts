@@ -1,4 +1,4 @@
-const BRIDGE_URL = 'http://localhost:7420'
+const HOST_NAME = 'com.zeroorigins.deskkeeper'
 
 interface TabSignal {
   tabId: number
@@ -15,15 +15,25 @@ interface ContentMessage {
   detectedState?: string
 }
 
-async function sendSignal(signal: TabSignal): Promise<void> {
+// One long-lived native port for the whole browser session. Chrome launches the
+// DeskKeeper native host on connect; the host forwards to the desktop app over a
+// local pipe. No HTTP, no port, no firewall surface.
+let port: chrome.runtime.Port | null = null
+
+function getPort(): chrome.runtime.Port {
+  if (port) return port
+  port = chrome.runtime.connectNative(HOST_NAME)
+  port.onDisconnect.addListener(() => {
+    port = null // host exited or app absent; reconnect lazily on next signal
+  })
+  return port
+}
+
+function sendSignal(signal: TabSignal): void {
   try {
-    await fetch(`${BRIDGE_URL}/signal`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(signal),
-    })
+    getPort().postMessage(signal)
   } catch {
-    // Desktop app not running — drop silently
+    port = null // connect/post failed (host not installed) — drop silently
   }
 }
 

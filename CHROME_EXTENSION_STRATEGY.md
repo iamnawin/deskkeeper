@@ -37,8 +37,8 @@ The extension fills the DOM-level browser gap. The desktop app handles everythin
    - Publish action pending
    - Download ready
    - Error visible on page
-4. Send detected signals to the Electron desktop app via a local bridge (HTTP or native messaging)
-5. If desktop app is not running, log signals locally
+4. Send detected signals to the Electron desktop app via Chrome Native Messaging
+5. If desktop app is not running, drop signals silently
 
 ---
 
@@ -63,11 +63,33 @@ The extension fills the DOM-level browser gap. The desktop app handles everythin
 
 ## Bridge to Desktop App
 
-The extension communicates with the Electron app via:
-- Option A: Local HTTP server on the Electron app (localhost:PORT)
-- Option B: Chrome Native Messaging (more complex, more secure)
+The extension communicates with the Electron app via **Chrome Native Messaging**.
 
-MVP: Local HTTP bridge on a fixed localhost port.
+The earlier MVP used a localhost HTTP server (port 7420). That was replaced because
+a fixed TCP port breaks outside a dev machine: it can be blocked by a firewall,
+owned by another process, or simply unreachable when the browser opens before the
+app. Native Messaging has none of those failure modes — there is no listening
+network port at all.
+
+**How it works:**
+
+1. The extension opens one long-lived port with `chrome.runtime.connectNative('com.zeroorigins.deskkeeper')` and posts tab signals to it.
+2. Chrome launches the registered native host (a small Node script run by the app
+   binary in `ELECTRON_RUN_AS_NODE` mode) and pipes messages to it over stdio.
+3. The host forwards each signal to the running desktop app through a local
+   **named pipe** (`\\.\pipe\deskkeeper-bridge`) — local-only, no firewall surface,
+   no port conflict.
+4. The desktop app registers the host on startup: it writes the host manifest +
+   launcher into its userData folder and points
+   `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.zeroorigins.deskkeeper`
+   at it (Windows). macOS/Linux registration is a later phase.
+
+**Host identity:** the host manifest's `allowed_origins` must list the loaded
+extension's ID. Set `DESKKEEPER_EXTENSION_ID` (or edit `native-host-service.ts`)
+to the ID shown in `chrome://extensions` after loading `extension/dist`.
+
+**App down:** if the desktop app isn't running, the pipe connect fails and the
+host drops the signal silently — same behavior as the old HTTP bridge.
 
 ---
 

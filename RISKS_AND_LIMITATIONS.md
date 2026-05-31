@@ -57,6 +57,9 @@
 **Risk**: Manifest V3 background service workers have limited lifetimes and restricted capabilities.  
 **Mitigation**: Extension only needs to detect tab state and forward signals — limited background processing needed. Long-running state is held in the desktop app, not the extension.
 
+**Risk**: The extension↔app bridge uses Chrome Native Messaging, which requires a host registered in the Windows registry and an `allowed_origins` entry matching the loaded extension's ID. A wrong/missing ID or absent registry key silently disables the companion.  
+**Mitigation**: The desktop app re-registers the host on every startup (best-effort, never blocks launch). The popup pings the host and shows "Desktop app not running" when the round-trip fails, making a broken link visible. The companion is optional — the desktop app's window detection works without it. Replaces the earlier localhost HTTP bridge (fixed port 7420), which was vulnerable to firewall blocks and port conflicts.
+
 ---
 
 ## Electron Security
