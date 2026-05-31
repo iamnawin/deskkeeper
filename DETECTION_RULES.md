@@ -140,6 +140,37 @@ A minimum confidence threshold of `0.3` is required to assign a non-UNKNOWN stat
 
 ---
 
+## App-Specific Heuristics
+
+Keyword rules only do substring matching, which can't express prefix/regex
+patterns or app-aware signals. A second, **pattern-based** layer lives in
+`app/src/main/services/app-heuristics.ts` and runs alongside keyword detection.
+
+The app is identified from `appName` (or the title's app suffix), then matched:
+
+| App | Pattern | → Status | Reason |
+|---|---|---|---|
+| VS Code | title starts with `●` | `ACTIVE` | Unsaved changes in editor |
+| Chrome | title contains `not responding` | `FAILED` | Page not responding |
+| Chrome | leading `(N)` badge | `WAITING_FOR_USER` | N unread notifications |
+| Slack | leading `(N)` badge | `WAITING_FOR_USER` | N unread messages |
+| Zoom | title contains `zoom meeting` | `RUNNING` | In a Zoom meeting |
+
+**Merge with keyword rules** (`runDetection`): the more attention-urgent result
+wins, ranked `FAILED > WAITING_FOR_USER > COMPLETED > RUNNING > ACTIVE > IDLE`.
+A matched keyword rule that is equally or more urgent is kept; an app heuristic
+only overrides it when strictly more urgent, or when no keyword rule matched at
+all. This keeps a real `FAILED` keyword winning over a soft "unread" hint while
+still surfacing app signals the keyword list can't see.
+
+> **Zoom note**: a dropped/frozen call is *not* detected by stateful title diff.
+> The meeting is marked `RUNNING`, and stale-detection flags it as
+> `WAITING_FOR_USER` once the title stops updating past the threshold.
+
+---
+
 ## Extending Rules
 
 Rules are data-driven and stored in `detection-rules.ts`. Future UI will allow users to add/edit custom rules. For MVP, the file is the source of truth.
+
+App-specific heuristics are code-driven (pattern matchers), not data rules — extend `app-heuristics.ts` to add a new app or signal.

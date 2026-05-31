@@ -199,8 +199,8 @@ Detection currently matches generic keywords against window titles only (`captur
 
 - [ ] Replace HTTP bridge with Chrome Native Messaging
 - [x] Add stale/hang detection to polling tick
-- [ ] Add app-specific title heuristics (Zoom, VS Code, Chrome, Slack)
+- [x] Add app-specific title heuristics (Zoom, VS Code, Chrome, Slack)
 - [ ] Fix capture-service stub with title-parsing fallback
 - [ ] Update CHROME_EXTENSION_STRATEGY.md with native messaging decision
-- [ ] Update DETECTION_RULES.md with app-specific patterns
+- [x] Update DETECTION_RULES.md with app-specific patterns
 - [ ] Update RISKS_AND_LIMITATIONS.md to remove HTTP bridge as a risk (resolved)
