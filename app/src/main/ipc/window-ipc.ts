@@ -1,5 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { listOpenWindows } from '../services/window-monitor-service'
+import { applyLoginItemSetting } from '../services/tray-service'
 import {
   getWatchedWindows,
   saveWatchedWindow,
@@ -100,6 +101,7 @@ export function registerWindowIpc(): void {
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:save', (_event, partial: Partial<UserSettings>) => {
     saveSettings(partial)
+    if (partial.launchOnLogin !== undefined) applyLoginItemSetting(partial.launchOnLogin)
   })
 
   ipcMain.handle('data:clear-all', () => { clearUserData() })

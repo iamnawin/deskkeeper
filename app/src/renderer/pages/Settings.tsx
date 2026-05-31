@@ -229,6 +229,16 @@ export default function Settings() {
       </section>
 
       <section>
+        <SectionHeader title="Startup" />
+        <SectionCard>
+          <SettingRow label="Launch on login & run in tray" value={settings.launchOnLogin} onChange={v => set('launchOnLogin', v)} />
+          <p style={{ color: '#5a5d70', fontSize: '11px', paddingBottom: '10px' }}>
+            Starts DeskKeeper automatically when you log in and keeps it watching from the system tray, so the app and browser companion stay connected without opening it manually. Applies to the installed app.
+          </p>
+        </SectionCard>
+      </section>
+
+      <section>
         <SectionHeader title="Demo" />
         <SectionCard>
           <div style={{ padding: '14px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>

@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🛰️ DeskKeeper AI
+<img src="brand/deskkeeper-logo.png" alt="DeskKeeper" width="128" height="128" />
+
+# DeskKeeper AI
 
 ### Your desktop control tower for unfinished work.
 

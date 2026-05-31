@@ -91,6 +91,8 @@ export interface UserSettings {
   // Minutes an in-progress (RUNNING) window may show no title change before it
   // is treated as stalled/hung and surfaced as WAITING_FOR_USER.
   staleThresholdMinutes: number
+  // Start DeskKeeper automatically when the user logs in (packaged builds only).
+  launchOnLogin: boolean
 }
 
 export interface StorageSchema {

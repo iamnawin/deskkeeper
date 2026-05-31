@@ -1,18 +1,19 @@
 import { defineConfig, type Plugin } from 'vite'
 import { resolve } from 'path'
-import { copyFileSync } from 'fs'
+import { copyFileSync, cpSync } from 'fs'
 
-function copyManifest(): Plugin {
+function copyStatic(): Plugin {
   return {
-    name: 'copy-manifest',
+    name: 'copy-static',
     closeBundle() {
       copyFileSync('./manifest.json', './dist/manifest.json')
+      cpSync('./icons', './dist/icons', { recursive: true })
     },
   }
 }
 
 export default defineConfig({
-  plugins: [copyManifest()],
+  plugins: [copyStatic()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,

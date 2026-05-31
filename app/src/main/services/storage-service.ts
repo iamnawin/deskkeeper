@@ -53,6 +53,7 @@ const EMPTY: StorageSchema = {
     useAiClassifier: false,
     captureIntervalSeconds: 10,
     staleThresholdMinutes: 10,
+    launchOnLogin: false,
   },
   detectionRules: [],
 }

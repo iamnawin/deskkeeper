@@ -42,6 +42,8 @@ function detectFromSignal(signal: TabSignal): Detected {
       return { status: 'WAITING_FOR_USER', detectedReason: 'Form needs input', suggestedAction: 'This tab has an incomplete form.' }
     case 'upload-in-progress':
       return { status: 'RUNNING', detectedReason: 'Upload in progress', suggestedAction: 'Upload running — check back when complete.' }
+    case 'media-playing':
+      return { status: 'ACTIVE', detectedReason: 'Media playing', suggestedAction: '' }
     default:
       return { status: 'ACTIVE', detectedReason: 'Active tab', suggestedAction: '' }
   }
@@ -76,20 +78,24 @@ function handleSignal(signal: TabSignal): void {
     return
   }
 
-  if (result.status !== existing.status) {
-    const updated: TaskCard = {
-      ...existing,
-      title: signal.title,
-      status: result.status,
-      detectedReason: result.detectedReason,
-      suggestedAction: result.suggestedAction,
-      lastSeenAt: now,
-      lastStateChangeAt: now,
-    }
-    saveTaskCard(updated)
-    maybeNotify(updated, settings)
-    notifyRenderer()
+  const statusChanged = result.status !== existing.status
+  const titleChanged = signal.title !== existing.title
+  // Nothing the user would see changed — skip the write to avoid churn.
+  if (!statusChanged && !titleChanged) return
+
+  const updated: TaskCard = {
+    ...existing,
+    title: signal.title,
+    status: result.status,
+    detectedReason: result.detectedReason,
+    suggestedAction: result.suggestedAction,
+    lastSeenAt: now,
+    // Only a genuine state transition resets the state-change clock (and notifies).
+    lastStateChangeAt: statusChanged ? now : existing.lastStateChangeAt,
   }
+  saveTaskCard(updated)
+  if (statusChanged) maybeNotify(updated, settings)
+  notifyRenderer()
 }
 
 export function startExtensionBridge(): void {

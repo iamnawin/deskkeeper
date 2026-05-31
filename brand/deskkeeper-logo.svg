@@ -1,0 +1,58 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="40" y1="58" x2="216" y2="208" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="0.5" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#162035"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <radialGradient id="node" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7df9ff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </radialGradient>
+  </defs>
+
+  <!-- app tile -->
+  <rect x="0" y="0" width="256" height="256" rx="56" fill="#0a0e1a"/>
+
+  <!-- stacked windows (depth) -->
+  <rect x="72" y="84" width="180" height="150" rx="26" fill="url(#card)" opacity="0.28" stroke="url(#g)" stroke-opacity="0.25"/>
+  <rect x="55" y="71" width="180" height="150" rx="26" fill="url(#card)" opacity="0.5" stroke="url(#g)" stroke-opacity="0.4"/>
+
+  <!-- front window -->
+  <rect x="38" y="58" width="180" height="150" rx="26" fill="url(#card)" stroke="url(#g)" stroke-width="2"/>
+
+  <!-- traffic-light dots -->
+  <circle cx="60" cy="80" r="5.5" fill="#22d3ee"/>
+  <circle cx="79" cy="80" r="5.5" fill="#3b82f6"/>
+  <circle cx="98" cy="80" r="5.5" fill="#8b5cf6"/>
+
+  <!-- radar rings inside the D -->
+  <g stroke="url(#g)" stroke-opacity="0.55" fill="none">
+    <circle cx="100" cy="146" r="9"/>
+    <circle cx="100" cy="146" r="17"/>
+    <circle cx="100" cy="146" r="25"/>
+  </g>
+  <line x1="100" y1="146" x2="119" y2="123" stroke="url(#g)" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="100" cy="146" r="3.5" fill="url(#node)"/>
+  <circle cx="119" cy="123" r="5.5" fill="url(#node)"/>
+  <circle cx="86" cy="164" r="3" fill="#22d3ee"/>
+
+  <!-- DK monogram -->
+  <g stroke="url(#g)" stroke-width="15" stroke-linecap="round" fill="none">
+    <!-- D bowl -->
+    <path d="M73 106 C 129 106, 129 186, 73 186"/>
+    <!-- K diagonals -->
+    <path d="M158 146 L 191 106"/>
+    <path d="M158 146 L 191 186"/>
+  </g>
+  <g fill="url(#g)">
+    <!-- D stem -->
+    <rect x="65" y="106" width="15" height="80" rx="6"/>
+    <!-- K stem -->
+    <rect x="145" y="106" width="15" height="80" rx="6"/>
+  </g>
+</svg>

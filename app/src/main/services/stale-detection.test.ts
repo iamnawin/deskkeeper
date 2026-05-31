@@ -24,6 +24,7 @@ const settings: UserSettings = {
   useAiClassifier: false,
   captureIntervalSeconds: 10,
   staleThresholdMinutes: 10,
+  launchOnLogin: false,
 }
 
 describe('recordActivity', () => {
