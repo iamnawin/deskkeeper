@@ -197,10 +197,10 @@ Detection currently matches generic keywords against window titles only (`captur
 - Return structured `visibleText` string the detection engine can use
 - Real OCR stays as Phase 6 — this is a pragmatic bridge
 
-- [ ] Replace HTTP bridge with Chrome Native Messaging
+- [x] Replace HTTP bridge with Chrome Native Messaging
 - [x] Add stale/hang detection to polling tick
 - [x] Add app-specific title heuristics (Zoom, VS Code, Chrome, Slack)
-- [ ] Fix capture-service stub with title-parsing fallback
-- [ ] Update CHROME_EXTENSION_STRATEGY.md with native messaging decision
+- [x] Fix capture-service stub with title-parsing fallback
+- [x] Update CHROME_EXTENSION_STRATEGY.md with native messaging decision
 - [x] Update DETECTION_RULES.md with app-specific patterns
-- [ ] Update RISKS_AND_LIMITATIONS.md to remove HTTP bridge as a risk (resolved)
+- [x] Update RISKS_AND_LIMITATIONS.md to remove HTTP bridge as a risk (resolved)

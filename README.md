@@ -1,156 +1,207 @@
-# DeskKeeper AI
+<div align="center">
 
-> Your desktop control tower. Know what is waiting, failed, completed, or forgotten.
+# 🛰️ DeskKeeper AI
 
----
+### Your desktop control tower for unfinished work.
 
-## What is DeskKeeper?
+*Know what's **waiting**, **failed**, **completed**, or **forgotten** — across every screen, app, and tab.*
 
-DeskKeeper AI is a **local-first desktop control tower** for unfinished work across screens, apps, tabs, tools, uploads, drafts, forms, renders, terminals, meetings, deployments, and AI agents.
+<br/>
 
-Modern users work across many windows and monitors simultaneously. One screen may have a coding agent waiting for approval. Another may have a video render completing. Another may have an email draft unsent. Another may have a Vercel deployment failing silently.
+![Status](https://img.shields.io/badge/status-v0.1.0_MVP-22c55e?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows_·_macOS_·_Linux-0ea5e9?style=flat-square)
+![Runtime](https://img.shields.io/badge/Electron-2c2e3b?style=flat-square&logo=electron)
+![UI](https://img.shields.io/badge/React_+_TypeScript-3178c6?style=flat-square&logo=react)
+![Tests](https://img.shields.io/badge/tests-33_passing-22c55e?style=flat-square)
+![Privacy](https://img.shields.io/badge/privacy-local--first-8b5cf6?style=flat-square)
 
-DeskKeeper watches your open work and tells you what needs attention before it gets forgotten.
-
----
-
-## One-Line Pitch
-
-**DeskKeeper watches your open work and tells you what needs attention.**
-
----
-
-## Current Status
-
-**v0.1.0** — All 9 build phases complete. MVP ready for local demo.
+</div>
 
 ---
 
-## Running the Desktop App (Dev Mode)
+## The problem
+
+You work across many windows and monitors at once. One screen has a coding agent **waiting for approval**. Another has a video render **completing**. An email draft sits **unsent**. A deployment is **failing silently** in a background tab.
+
+Things slip. Attention is the bottleneck — not the work.
+
+**DeskKeeper watches your open work and tells you what needs attention before it gets forgotten.**
+
+It does three things, and nothing more: **observe → classify → notify.** No auto-clicking. No desktop takeover. No cloud uploads. Local-first by design.
+
+---
+
+## Highlights
+
+| | |
+|---|---|
+| 🪟 **Watch what you choose** | You pick the windows to monitor — nothing is watched by default. |
+| 🧭 **State detection** | Rule-based engine classifies windows: `WAITING_FOR_USER`, `RUNNING`, `FAILED`, `COMPLETED`, `IDLE`. |
+| 🎯 **App-aware heuristics** | Knows VS Code's `●` unsaved dot, Chrome/Slack `(N)` unread badges, "Not Responding" pages, live Zoom meetings. |
+| ⏱️ **Stale / hang detection** | A window that goes quiet past your threshold is surfaced instead of silently "running" forever. |
+| 🔔 **Smart notifications** | Desktop alerts on attention-worthy changes, with cooldown to kill spam. |
+| 🧩 **Browser companion** | Optional Chrome extension adds DOM-level signals (form state, upload progress, page errors) over **Chrome Native Messaging** — no open port. |
+| 🔒 **Privacy controls** | Private mode pauses everything. No screenshots stored or transmitted. AI is opt-in and off by default. |
+
+---
+
+## Quick start (dev)
+
+> Requires [Node.js 18+](https://nodejs.org) and [pnpm](https://pnpm.io).
 
 ```bash
 cd app
-npm install
-npm run dev
+pnpm install
+pnpm dev          # Electron opens with hot-reload — no extra setup
 ```
 
-The Electron app opens in dev mode with hot-reload. No extra setup required.
+No real windows to monitor? Load sample data: **Settings → Demo → Load demo data**, then open **Dashboard**.
 
 ---
 
-## Building the Desktop App (Production)
+## Build & package
 
 ```bash
 cd app
-npm install
-npm run build        # compile only (fast check)
-npm run package      # compile + create installer in app/dist/
+pnpm install
+pnpm build        # compile only (fast sanity check)
+pnpm package      # compile + create an installer in app/dist/
 ```
 
-The installer is built to:
-- **Windows**: `app/dist/DeskKeeper-0.1.0-win-x64.exe`
-- **Mac**: `app/dist/DeskKeeper-0.1.0-mac-x64.dmg` / `-arm64.dmg`
-- **Linux**: `app/dist/DeskKeeper-0.1.0-linux-x64.AppImage`
+| OS | Artifact |
+|---|---|
+| 🪟 Windows | `app/dist/DeskKeeper-0.1.0-win-x64.exe` (NSIS) |
+| 🍎 macOS | `app/dist/DeskKeeper-0.1.0-mac-x64.dmg` / `-arm64.dmg` |
+| 🐧 Linux | `app/dist/DeskKeeper-0.1.0-linux-x64.AppImage` |
 
 ---
 
-## Building the Chrome Extension
+## Browser companion (optional)
+
+The Chrome extension adds signals the desktop app can't read from a window title — incomplete forms, upload progress, visible page errors. It talks to the app over **Chrome Native Messaging** (a local named pipe), so there is **no HTTP server and no open port** to be blocked or hijacked.
 
 ```bash
 cd extension
-npm install
-npm run build        # compiles to extension/dist/
+pnpm install
+pnpm build        # outputs to extension/dist/
 ```
 
-### Loading the Extension in Chrome
+**Load it in Chrome:**
 
-1. Open Chrome and go to `chrome://extensions`
-2. Enable **Developer mode** (toggle, top right)
-3. Click **Load unpacked**
-4. Select the folder: `extension/dist/`
-5. The DeskKeeper extension icon appears in the Chrome toolbar
+1. Open `chrome://extensions` → enable **Developer mode**.
+2. **Load unpacked** → select `extension/dist/`.
+3. Copy the **extension ID** Chrome shows for DeskKeeper.
 
-The extension connects to the desktop app on `localhost:7420`. The popup shows green when the desktop app is running.
+**Connect it to the app:**
 
----
+1. Tell the app which extension to trust:
+   ```powershell
+   $env:DESKKEEPER_EXTENSION_ID = "<id-from-chrome>"
+   ```
+   (or edit the default in `app/src/main/services/native-host-service.ts`).
+2. Launch the desktop app — on startup it registers the native messaging host.
+3. Click the extension's toolbar icon: a green dot means the app answered.
 
-## Demo Mode
-
-If you don't have real windows to monitor, load demo data:
-
-1. Launch the desktop app (`npm run dev` inside `app/`)
-2. Navigate to **Settings → Demo → Load demo data**
-3. Click **Load demo data**
-4. Go to **Dashboard** — 4 representative task cards appear
+> If the app isn't running, the extension drops signals silently. The companion is **optional** — desktop window detection works without it.
 
 ---
 
-## MVP Features (v0.1.0)
+## How it works
 
-- View currently open windows
-- Select windows to watch
-- Watched windows become task cards
-- Automatic state detection: `WAITING_FOR_USER`, `RUNNING`, `FAILED`, `COMPLETED`, `IDLE`
-- Desktop notifications when attention is needed
-- Detection rules engine (keyword-based, configurable)
-- Settings persistence (local JSON, no cloud)
-- Privacy controls: private mode, pause monitoring
-- Chrome extension companion with popup status indicator
-- Demo mode (Settings → Load demo data)
+```
+┌──────────────────┐        ┌─────────────────────────────────────────┐
+│  Chrome extension │        │            Electron desktop app          │
+│                   │        │                                          │
+│  content-script   │        │  window-monitor ─┐                       │
+│       │ DOM state │        │  capture-service ─┼─► detection-engine    │
+│       ▼           │        │                   │   + app-heuristics    │
+│  background  ─────┼─ Native│                   │   + stale-detection   │
+│  (connectNative)  │ Messaging│                 ▼                       │
+│                   │  (pipe) │  task-state ──► notification-service     │
+│                   ├────────►│  storage (local JSON, electron-store)    │
+└──────────────────┘        └─────────────────────────────────────────┘
+```
+
+**Detection** runs locally in two merged layers:
+
+1. **Keyword rules** — substring matching over the window title (+ captured text), priority-ordered `CRITICAL → LOW`.
+2. **App heuristics** — pattern matchers for known apps (VS Code, Chrome, Slack, Zoom).
+
+Results merge by attention-severity: `FAILED > WAITING_FOR_USER > COMPLETED > RUNNING > ACTIVE > IDLE`. A real failure always beats a soft hint. See [`DETECTION_RULES.md`](DETECTION_RULES.md).
 
 ---
 
-## Tech Stack
+## Tech stack
 
 | Layer | Tech |
 |---|---|
 | Desktop runtime | Electron |
-| UI framework | React + TypeScript |
-| Build tool | electron-vite |
-| Styling | Tailwind CSS |
-| Storage | Local JSON (app data directory) |
-| Detection | Rule-based engine (AI optional) |
-| Extension | MV3, Vite, TypeScript |
+| UI | React + TypeScript + Tailwind CSS |
+| Build | electron-vite · Vite |
+| Storage | Local JSON via electron-store (no cloud) |
+| Detection | Rule-based engine + app heuristics (AI optional) |
+| Bridge | Chrome Native Messaging over a local named pipe |
+| Tests | Vitest |
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
-DeskKeeper AI/
-├── app/                    Electron desktop app
-│   ├── src/main/           Main process (IPC, services)
-│   ├── src/renderer/       React UI
-│   ├── src/preload/        Electron preload bridge
-│   └── src/shared/         Shared TypeScript types
-├── extension/              Chrome extension companion
-│   ├── src/                Extension source
-│   └── dist/               Built extension (load this in Chrome)
-└── *.md                    Product documentation
+deskkeeper/
+├── app/                       Electron desktop app
+│   ├── native-host/           Native messaging host (Node script Chrome spawns)
+│   ├── src/main/              Main process — services, IPC, detection
+│   ├── src/preload/           Context-isolated renderer bridge
+│   ├── src/renderer/          React UI
+│   └── src/shared/            Shared TypeScript types
+├── extension/                 Chrome companion (MV3)
+│   └── src/                   background · content-script · popup
+└── *.md                       Product & engineering documentation
 ```
+
+---
+
+## Testing
+
+```bash
+cd app
+pnpm test         # Vitest — 33 unit tests across detection, protocol, framing
+pnpm typecheck    # tsc --noEmit
+```
+
+Unit tests cover the pure logic: detection merge, app heuristics, stale detection, the native-messaging framing codec, and the host↔app signal protocol.
 
 ---
 
 ## Roadmap
 
 | Phase | Goal | Status |
-|---|---|---|
-| 0 | Documentation | ✓ |
-| 1 | Electron mock UI | ✓ |
-| 2 | Window monitor + watched windows | ✓ |
-| 3 | Rule-based detection engine | ✓ |
-| 4 | Desktop notifications | ✓ |
-| 5 | Local storage persistence | ✓ |
-| 6 | OCR abstraction (placeholder) | ✓ |
-| 7 | Chrome extension companion | ✓ |
-| 8 | Optional AI classifier | ✓ |
-| 9 | Packaging + distribution | ✓ |
-| 10 | MVP hardening + demo readiness | ✓ |
+|---|---|:---:|
+| 0–9 | Docs → UI → monitor → detection → notifications → storage → OCR stub → extension → AI stub → packaging | ✅ |
+| 10 | **Hardening**: Native Messaging bridge, stale/hang detection, app heuristics, title-parse capture | ✅ |
+
+---
+
+## Privacy & boundaries
+
+DeskKeeper is built to **observe, classify, and notify** — deliberately not more.
+
+- ✅ Only **user-selected** windows are watched — nothing by default.
+- ✅ All detection is **local**. No screenshots are stored or transmitted.
+- ✅ **Private mode** pauses all monitoring instantly.
+- ✅ AI classification is **opt-in** and disabled by default.
+- ❌ Never auto-clicks, auto-approves, or takes over your desktop.
+
+See [`PRIVACY_SECURITY_MODEL.md`](PRIVACY_SECURITY_MODEL.md) and [`RISKS_AND_LIMITATIONS.md`](RISKS_AND_LIMITATIONS.md).
 
 ---
 
 ## Documentation
 
-All product decisions are captured in markdown files at the root of this repo. Start with `PROJECT_CONTEXT.md` for the full picture.
+Product decisions live in markdown at the repo root. Start with [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) for the full picture, [`ROADMAP.md`](ROADMAP.md) for what's next, [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for common issues, and [`RELEASE_NOTES.md`](RELEASE_NOTES.md) for v0.1.0 changes.
 
-See `TROUBLESHOOTING.md` for common issues. See `RELEASE_NOTES.md` for v0.1.0 changes.
+<div align="center">
+<br/>
+<sub>Built by <b>ZeroOrigins AI</b> · local-first · privacy-first</sub>
+</div>
