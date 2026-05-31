@@ -1,10 +1,8 @@
 import net from 'net'
 import { existsSync, unlinkSync } from 'fs'
-import { BrowserWindow } from 'electron'
-import { getSettings, saveTaskCard, getTaskCards } from './storage-service'
-import { maybeNotify } from './notification-service'
+import { getSettings, getTaskCards, removeTaskCard } from './storage-service'
 import { parseNdjson, type TabSignal } from './signal-protocol'
-import type { TaskCard, TaskStatus } from '../../shared/types'
+import type { TaskStatus } from '../../shared/types'
 
 // Local named pipe the native messaging host forwards tab signals to. Not a TCP
 // port: no firewall surface, no port-conflict, no listening network socket.
@@ -12,30 +10,55 @@ export const PIPE_PATH =
   process.platform === 'win32' ? '\\\\.\\pipe\\deskkeeper-bridge' : '/tmp/deskkeeper-bridge.sock'
 
 let server: net.Server | null = null
-let notifyTimer: ReturnType<typeof setTimeout> | null = null
 
-// Coalesce rapid signal bursts (e.g. fast tab switching) into a single renderer
-// refresh so the UI doesn't re-render the whole task list on every signal.
-function notifyRenderer(): void {
-  if (notifyTimer !== null) return
-  notifyTimer = setTimeout(() => {
-    notifyTimer = null
-    BrowserWindow.getAllWindows()[0]?.webContents.send('taskCards:updated')
-  }, 250)
+// Latest active-tab signal per normalized title. The extension is a richer
+// capture source for watched browser windows — it deliberately does NOT create
+// its own task cards, which would auto-watch tabs the user never chose (and
+// flooded the dashboard). Polling reads these to enrich the matching
+// watched-window card; that keeps a single writer for cards.
+const latestSignals = new Map<string, { signal: TabSignal; at: number }>()
+const SIGNAL_TTL_MS = 60_000
+
+// Strip the trailing " - Google Chrome" (or Edge/Brave/Chromium) that the OS
+// appends to a browser window title, so a tab's document.title matches the
+// watched window's OS title.
+function normalizeTitle(title: string): string {
+  return title
+    .replace(/\s+[-–—]\s+(Google Chrome|Chromium|Microsoft Edge|Brave)\s*$/i, '')
+    .trim()
+    .toLowerCase()
 }
 
-interface Detected {
+function handleSignal(signal: TabSignal): void {
+  const settings = getSettings()
+  if (settings.monitoringPaused || settings.privateModeEnabled) return
+  latestSignals.set(normalizeTitle(signal.title), { signal, at: Date.now() })
+}
+
+// Freshest browser signal whose tab title matches an OS window title, or
+// undefined when no live tab matches (or the last signal has gone stale).
+export function getSignalForWindow(osWindowTitle: string): TabSignal | undefined {
+  const key = normalizeTitle(osWindowTitle)
+  const entry = latestSignals.get(key)
+  if (!entry) return undefined
+  if (Date.now() - entry.at > SIGNAL_TTL_MS) {
+    latestSignals.delete(key)
+    return undefined
+  }
+  return entry.signal
+}
+
+interface BrowserDetection {
   status: TaskStatus
   detectedReason: string
   suggestedAction: string
 }
 
-// Map the content-script's structured page signal to a task state. We trust the
-// DOM-based detectedState (real error element, progress bar, incomplete form)
-// rather than keyword-matching arbitrary page text — the words "error"/"failed"
-// appear on countless normal pages and produced constant false FAILED alerts.
-function detectFromSignal(signal: TabSignal): Detected {
-  switch (signal.detectedState) {
+// Map a content-script DOM signal to a task state. Returns null for the generic
+// "just an active tab" case so polling keeps its own rule-based result rather
+// than being overridden with a meaningless ACTIVE.
+export function browserStateToDetection(detectedState: string | undefined): BrowserDetection | null {
+  switch (detectedState) {
     case 'error-visible':
       return { status: 'FAILED', detectedReason: 'Error visible on page', suggestedAction: 'Review the error on this tab.' }
     case 'form-incomplete':
@@ -45,61 +68,22 @@ function detectFromSignal(signal: TabSignal): Detected {
     case 'media-playing':
       return { status: 'ACTIVE', detectedReason: 'Media playing', suggestedAction: '' }
     default:
-      return { status: 'ACTIVE', detectedReason: 'Active tab', suggestedAction: '' }
+      return null
   }
 }
 
-function handleSignal(signal: TabSignal): void {
-  const settings = getSettings()
-  if (settings.monitoringPaused || settings.privateModeEnabled) return
-
-  const windowId = `ext-tab-${signal.tabId}`
-  const now = new Date().toISOString()
-  const result = detectFromSignal(signal)
-
-  const existing = getTaskCards().find(c => c.windowId === windowId)
-
-  if (!existing) {
-    const card: TaskCard = {
-      id: `tc-${windowId}`,
-      windowId,
-      title: signal.title,
-      appName: 'Chrome',
-      status: result.status,
-      priority: 'MEDIUM',
-      detectedReason: result.detectedReason,
-      suggestedAction: result.suggestedAction,
-      lastSeenAt: now,
-      lastStateChangeAt: now,
-    }
-    saveTaskCard(card)
-    maybeNotify(card, settings)
-    notifyRenderer()
-    return
+// One-time migration: older builds created a card per browser tab
+// (id `tc-ext-tab-*`). The extension no longer owns cards — purge the strays.
+function purgeLegacyTabCards(): void {
+  for (const card of getTaskCards()) {
+    if (card.id.startsWith('tc-ext-tab-')) removeTaskCard(card.id)
   }
-
-  const statusChanged = result.status !== existing.status
-  const titleChanged = signal.title !== existing.title
-  // Nothing the user would see changed — skip the write to avoid churn.
-  if (!statusChanged && !titleChanged) return
-
-  const updated: TaskCard = {
-    ...existing,
-    title: signal.title,
-    status: result.status,
-    detectedReason: result.detectedReason,
-    suggestedAction: result.suggestedAction,
-    lastSeenAt: now,
-    // Only a genuine state transition resets the state-change clock (and notifies).
-    lastStateChangeAt: statusChanged ? now : existing.lastStateChangeAt,
-  }
-  saveTaskCard(updated)
-  if (statusChanged) maybeNotify(updated, settings)
-  notifyRenderer()
 }
 
 export function startExtensionBridge(): void {
   if (server !== null) return
+
+  purgeLegacyTabCards()
 
   // A stale unix-socket file blocks listen() after an unclean exit (no-op on Windows pipes).
   if (process.platform !== 'win32' && existsSync(PIPE_PATH)) {

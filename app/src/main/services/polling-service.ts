@@ -6,6 +6,7 @@ import { maybeNotify } from './notification-service'
 import { captureWindow } from './capture-service'
 import { classify } from './ai-classifier'
 import { recordActivity, isStale } from './stale-detection'
+import { getSignalForWindow, browserStateToDetection } from './extension-bridge'
 import type { TaskStatus } from '../../shared/types'
 
 const SKIP_STATUSES: TaskStatus[] = ['DONE', 'IGNORED']
@@ -70,6 +71,17 @@ async function tick(): Promise<void> {
         newStatus = 'WAITING_FOR_USER'
         reason = `Appears stalled — no change for ${settings.staleThresholdMinutes} min`
         suggested = 'Check this window — the task may be stuck.'
+      }
+
+      // The Chrome extension is a richer capture source than the window title:
+      // a fresh tab signal both proves the window is alive (so it can't be
+      // stale) and carries DOM state — media playing, a visible error, an
+      // incomplete form — the title alone can't reveal. Let it win when present.
+      const browser = browserStateToDetection(getSignalForWindow(openWin.title)?.detectedState)
+      if (browser) {
+        newStatus = browser.status
+        reason = browser.detectedReason
+        suggested = browser.suggestedAction
       }
     }
 

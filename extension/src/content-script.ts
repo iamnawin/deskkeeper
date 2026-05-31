@@ -39,6 +39,10 @@ function detectState(): string | undefined {
 // De-dupe: only send when something the app cares about actually changed.
 let lastKey = ''
 function report(): void {
+  // Only the active (visible) tab reports. Background tabs stay silent so the
+  // desktop app never sees — and never auto-watches — tabs the user isn't on.
+  if (document.visibilityState !== 'visible') return
+
   const detectedState = detectState()
   const title = document.title
   const key = `${title}|${detectedState ?? ''}|${location.href}`
@@ -70,6 +74,9 @@ for (const method of ['pushState', 'replaceState'] as const) {
   } as History[typeof method]
 }
 window.addEventListener('popstate', report)
+
+// Report when this tab becomes the active one (its content is now what's on screen).
+document.addEventListener('visibilitychange', report)
 
 // Media play/pause/ended — capture phase catches events from any media element.
 for (const evt of ['play', 'pause', 'ended'] as const) {
